@@ -1,0 +1,54 @@
+// MoonKart Prisma Schema
+// Source of truth: docs/Database.md, docs/Authentication.md
+//
+// MoonKart is a single-vendor store: the Admin is the sole business owner
+// and seller. There is no Seller role, application, or approval workflow.
+//
+// Supabase Auth is the exclusive credential store (docs/Authentication.md).
+// No model in this file may store a password. `supabaseId` links every
+// `User` row to its corresponding `auth.users` identity in Supabase.
+//
+// Only the models required for Authentication (Phase 3) are defined here.
+// Product, Order, Cart, Review, Coupon, etc. models from docs/Database.md
+// are added in their own later phases.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserRole {
+  CUSTOMER
+  ADMIN
+}
+
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+}
+
+model User {
+  id           String       @id @default(uuid()) @db.Uuid
+  supabaseId   String       @unique @map("supabase_id")
+  firstName    String       @map("first_name")
+  lastName     String       @map("last_name")
+  email        String       @unique
+  phone        String?
+  avatar       String?
+  role         UserRole     @default(CUSTOMER)
+  authProvider AuthProvider @default(EMAIL) @map("auth_provider")
+  isVerified   Boolean      @default(false) @map("is_verified")
+  isActive     Boolean      @default(true) @map("is_active")
+  lastLogin    DateTime?    @map("last_login")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  @@index([email])
+  @@index([supabaseId])
+  @@map("users")
+}

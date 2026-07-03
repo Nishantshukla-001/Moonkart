@@ -1,0 +1,269 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+  MoonKart Design System
+  Source of truth: design/Colors.md, design/Typography.md, design/Components.md
+  Do not introduce colors, radii, or fonts outside this file.
+*/
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --font-sans: var(--font-inter);
+  --font-heading: var(--font-poppins);
+  --font-mono: var(--font-geist-mono);
+
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  /* MoonKart brand + semantic colors (design/Colors.md) */
+  --color-sage: var(--sage);
+  --color-sage-hover: var(--sage-hover);
+  --color-sage-light: var(--sage-light);
+  --color-blush: var(--blush);
+  --color-blush-hover: var(--blush-hover);
+  --color-blush-light: var(--blush-light);
+  --color-warm-yellow: var(--warm-yellow);
+
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-section: var(--bg-section);
+  --color-bg-dashboard: var(--bg-dashboard);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-placeholder: var(--text-placeholder);
+  --color-text-disabled: var(--text-disabled);
+
+  --color-border-light: var(--border-light);
+  --color-border-medium: var(--border-medium);
+  --color-divider: var(--divider);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+
+  --color-badge-new: var(--badge-new);
+  --color-badge-sale: var(--badge-sale);
+  --color-badge-trending: var(--badge-trending);
+  --color-badge-exclusive: var(--badge-exclusive);
+  --color-badge-limited: var(--badge-limited);
+
+  /* Radii (design/Components.md) */
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-card: var(--radius-card-value);
+  --radius-modal: var(--radius-modal-value);
+  --radius-image: var(--radius-image-value);
+  --radius-product-card: var(--radius-product-card-value);
+
+  /* Animation durations (design/Components.md) */
+  --duration-hover: 0.25s;
+  --duration-page: 0.4s;
+
+  /*
+    Soft, diffused premium shadows (design/Components.md: "Cards: Very Soft",
+    "Heavy shadows should never be used"). Prefer these over the default
+    Tailwind shadow-sm/md/lg scale for anything product/card related.
+  */
+  --shadow-soft: 0 2px 8px 0 rgb(47 47 47 / 0.04), 0 8px 20px -4px rgb(47 47 47 / 0.06);
+  --shadow-soft-md: 0 4px 14px 0 rgb(47 47 47 / 0.06), 0 14px 32px -8px rgb(47 47 47 / 0.09);
+  --shadow-soft-lg: 0 8px 24px 0 rgb(47 47 47 / 0.07), 0 24px 48px -12px rgb(47 47 47 / 0.12);
+}
+
+:root {
+  --background: #ffffff;
+  --foreground: #2f2f2f;
+  --card: #ffffff;
+  --card-foreground: #2f2f2f;
+  --popover: #ffffff;
+  --popover-foreground: #2f2f2f;
+
+  /*
+    Primary = Soft Blush Pink (dominant brand color, ~60% of the visual
+    hierarchy — hero gradients, CTAs, hover states, section accents).
+    Sage Green is now a tertiary, trust/success-only accent — see
+    components/shared/WhyChooseUs.tsx.
+  */
+  --primary: #f5d4dc;
+  --primary-foreground: #2f2f2f;
+
+  /* Secondary button = white with a soft blush border */
+  --secondary: #ffffff;
+  --secondary-foreground: #2f2f2f;
+
+  --muted: #f8f8f5;
+  --muted-foreground: #888888;
+
+  /* Accent = also Blush Pink (menu/dropdown hover states) */
+  --accent: #f5d4dc;
+  --accent-foreground: #2f2f2f;
+
+  --destructive: #e67c73;
+  --destructive-foreground: #ffffff;
+
+  --border: #ececec;
+  --input: #d9d9d9;
+  --ring: #efc6d1;
+
+  --chart-1: #c8d8b3;
+  --chart-2: #f5d4dc;
+  --chart-3: #f9edb7;
+  --chart-4: #7bbf7b;
+  --chart-5: #7daedb;
+
+  --radius: 0.75rem;
+  --radius-card-value: 1.25rem;
+  --radius-modal-value: 1.5rem;
+  --radius-image-value: 1.25rem;
+  --radius-product-card-value: 1.75rem;
+
+  --sidebar: #ffffff;
+  --sidebar-foreground: #2f2f2f;
+  --sidebar-primary: #f5d4dc;
+  --sidebar-primary-foreground: #2f2f2f;
+  --sidebar-accent: #fdf2f5;
+  --sidebar-accent-foreground: #2f2f2f;
+  --sidebar-border: #ececec;
+  --sidebar-ring: #efc6d1;
+
+  /* MoonKart brand tokens */
+  --sage: #c8d8b3;
+  --sage-hover: #b8c9a2;
+  --sage-light: #f7faf4;
+  --blush: #f5d4dc;
+  --blush-hover: #efc6d1;
+  --blush-light: #fdf2f5;
+  --warm-yellow: #f9edb7;
+
+  --bg-secondary: #fcfcf9;
+  --bg-section: #fffdf7;
+  --bg-dashboard: #f8f8f5;
+
+  --text-primary: #2f2f2f;
+  --text-secondary: #5b5b5b;
+  --text-muted: #888888;
+  --text-placeholder: #a0a0a0;
+  --text-disabled: #c5c5c5;
+
+  --border-light: #ececec;
+  --border-medium: #dddddd;
+  --divider: #efefef;
+
+  --success: #7bbf7b;
+  --warning: #f3c86a;
+  --danger: #e67c73;
+  --info: #7daedb;
+
+  /*
+    Badge colors follow the new hierarchy: pink for general product badges,
+    pastel yellow reserved specifically for sale/discount badges.
+  */
+  --badge-new: #f5d4dc;
+  --badge-sale: #f9edb7;
+  --badge-trending: #f5d4dc;
+  --badge-exclusive: #d8c4a8;
+  --badge-limited: #bfa58a;
+}
+
+/*
+  Dark mode is out of scope for Version 1 (see docs/Vision.md, design/Components.md).
+  Tokens are defined so next-themes / ThemeProvider is wired and ready, but no
+  dark mode toggle is exposed in the UI yet.
+*/
+.dark {
+  --background: #1c1c1a;
+  --foreground: #f2f2ef;
+  --card: #242422;
+  --card-foreground: #f2f2ef;
+  --popover: #242422;
+  --popover-foreground: #f2f2ef;
+
+  --primary: #f5d4dc;
+  --primary-foreground: #1c1c1a;
+  --secondary: #2a2a27;
+  --secondary-foreground: #f2f2ef;
+  --muted: #2a2a27;
+  --muted-foreground: #a8a8a2;
+  --accent: #f5d4dc;
+  --accent-foreground: #1c1c1a;
+  --destructive: #e67c73;
+  --destructive-foreground: #1c1c1a;
+
+  --border: #35352f;
+  --input: #35352f;
+  --ring: #efc6d1;
+
+  --sidebar: #242422;
+  --sidebar-foreground: #f2f2ef;
+  --sidebar-primary: #f5d4dc;
+  --sidebar-primary-foreground: #1c1c1a;
+  --sidebar-accent: #2a2a27;
+  --sidebar-accent-foreground: #f2f2ef;
+  --sidebar-border: #35352f;
+  --sidebar-ring: #efc6d1;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply font-sans scroll-smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-heading font-semibold tracking-tight text-text-primary;
+  }
+}
