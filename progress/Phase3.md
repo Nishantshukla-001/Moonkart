@@ -4,6 +4,22 @@ Status: COMPLETE
 Started: 2026-07-03
 Finished: 2026-07-03
 Updated: 2026-07-03 — refactored from multi-vendor to single-vendor (Seller role removed); remaining docs (Features.md, Vision.md, FolderStructure.md, Pages.md) brought in line in a follow-up documentation pass
+Updated: 2026-07-04 — connected to the real Supabase project end-to-end (see "Supabase Go-Live" section below)
+
+## Supabase Go-Live (2026-07-04)
+
+The project was connected to a real Supabase project for the first time. Two root-cause bugs were found and fixed, and the schema was migrated for the first time:
+
+1. **`DIRECT_URL` pointed at an unreachable host.** Supabase's direct connection host (`db.<ref>.supabase.co:5432`) is IPv6-only; this network has no outbound IPv6 route, so anything using it (`prisma migrate`, `db push`) hung until Prisma threw `P1001: Can't reach database server`. Fixed by pointing `DIRECT_URL` at Supabase's **Session Pooler** instead (same Supavisor host, port `5432` — IPv4-compatible, intended by Supabase for exactly this case). `DATABASE_URL` (already on the **Transaction Pooler**, port `6543`) was left pointed at the same host but given `?pgbouncer=true&connection_limit=1`, which Prisma requires against a transaction-mode pooler.
+2. **Two env files silently duplicated `DATABASE_URL`/`DIRECT_URL`.** A root `.env` (which the Prisma CLI auto-loads) and `.env.local` (which Next.js loads, with higher precedence) both defined these two variables. They happened to hold identical values, but this is a footgun: editing one and not the other — as happened here — leaves the CLI and the running app pointed at different databases with no visible warning. Consolidated so `DATABASE_URL`/`DIRECT_URL` live **only** in `.env` (both Prisma CLI and Next.js read it); `.env.local` now holds only the Supabase client keys and `NEXT_PUBLIC_SITE_URL`. `.env.example` was rewritten to document the split and the pooler-vs-direct pitfall for future setup.
+3. **`isVerified` never synced from Supabase to Prisma.** `app/auth/confirm/route.ts` called `supabase.auth.verifyOtp()` on the emailed confirmation link but never updated the app's own `User.isVerified` column — so a user's row stayed permanently `false` even after they verified their email. Fixed: when `verifyOtp` succeeds and the returned user has `email_confirmed_at` set, the route now updates `prisma.user.update({ where: { supabaseId }, data: { isVerified: true } })`.
+4. **First migration created and applied.** No `prisma/migrations` folder existed yet, so the `users` table had never been created in the real database. Ran `npx prisma migrate dev --name init`, which generated `prisma/migrations/20260704123807_init/` and applied it — confirmed via a direct `SELECT` and `prisma.user.count()`.
+
+**Verified end-to-end against the live Supabase project** (using disposable test accounts, deleted afterward from both Supabase Auth and Prisma): register → Prisma row + Supabase Auth identity created → login blocked with "verify your email" until confirmed → confirming via the real `/auth/confirm` link flow correctly flips `isVerified` → login succeeds and sets a session cookie → `/api/auth/me`, `/account`, `/profile` all work while authenticated → `/admin` correctly blocked for a `CUSTOMER` and correctly allowed after promoting the same account to `ADMIN` in Prisma + syncing `user_metadata` → logout invalidates the session (`/api/auth/me` → 401, protected pages redirect again).
+
+**Confirmed still outstanding (needs Supabase Dashboard + Google Cloud Console access, which cannot be done from here):** Google OAuth is **not enabled** on the Supabase project yet — `GET {SUPABASE_URL}/auth/v1/authorize?provider=google` returns `"Unsupported provider: provider is not enabled"`. The application code (`GoogleAuthButton`, `/auth/callback`) is correct and unchanged; enabling it requires creating a Google Cloud OAuth Client (Client ID/Secret) and pasting it into Supabase Dashboard → Authentication → Providers → Google.
+
+**Security note:** during this session, a `DATABASE_URL`/`DIRECT_URL` debugging command briefly printed the database password in plaintext into the terminal output. The user was told to rotate the Supabase database password immediately; this is not a code issue, just an operational follow-up.
 
 Note on numbering: `progress/Phase2.md` already documents the completed
 Homepage build. Per user confirmation, this Authentication phase is tracked

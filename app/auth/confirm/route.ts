@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 
+import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -16,9 +17,21 @@ export async function GET(request: NextRequest) {
 
   if (tokenHash && type) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
+    const { data, error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
 
     if (!error) {
+      // Keep Prisma's `isVerified` in sync with Supabase's own confirmation
+      // state — verifyOtp() only updates auth.users, so without this the
+      // app's own User row would stay permanently "unverified".
+      if (data.user?.email_confirmed_at) {
+        await prisma.user
+          .update({
+            where: { supabaseId: data.user.id },
+            data: { isVerified: true },
+          })
+          .catch(() => null);
+      }
+
       return NextResponse.redirect(`${origin}${next}`);
     }
   }
