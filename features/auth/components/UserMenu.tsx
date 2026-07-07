@@ -23,7 +23,7 @@ export function UserMenu() {
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   if (isLoading) {
-    return <div className="size-9 shrink-0 animate-pulse rounded-full bg-bg-section" aria-hidden="true" />;
+    return <div className="size-10 shrink-0 animate-pulse rounded-full bg-bg-section" aria-hidden="true" />;
   }
 
   if (!profile) {
@@ -50,7 +50,7 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className="flex size-9 items-center justify-center rounded-full bg-blush-light font-heading text-sm font-semibold text-blush-hover outline-none transition-transform duration-[250ms] hover:scale-105"
+        className="flex size-10 items-center justify-center rounded-full bg-blush font-heading text-sm font-semibold text-text-primary outline-none transition-transform duration-[250ms] hover:scale-105"
         aria-label="Account menu"
       >
         {profile.firstName[0]}

@@ -1,4 +1,4 @@
-import type { NextRequest } from "next/server";
+import { after, type NextRequest } from "next/server";
 
 import { loginSchema } from "@/features/auth/validation/auth.schema";
 import { apiError, apiSuccess } from "@/lib/apiResponse";
@@ -49,7 +49,12 @@ export async function POST(request: NextRequest) {
     return apiError("This account has been suspended. Contact support for help.", [], 403);
   }
 
-  await prisma.user.update({ where: { id: profile.id }, data: { lastLogin: new Date() } });
+  // `lastLogin` is a non-critical analytics timestamp the response doesn't
+  // need — deferring it via `after()` moves it off the response's critical
+  // path while still guaranteeing it runs to completion (unlike a bare
+  // detached promise, which a serverless platform could kill mid-write the
+  // instant the response is sent).
+  after(() => prisma.user.update({ where: { id: profile.id }, data: { lastLogin: new Date() } }));
 
   return apiSuccess({ role: profile.role }, "Logged in successfully.");
 }

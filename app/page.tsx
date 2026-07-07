@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { Container } from "@/components/layout/Container";
+import { Carousel } from "@/components/shared/Carousel";
 import { CategoryCard } from "@/components/categories/CategoryCard";
 import { CollectionCard } from "@/components/shared/CollectionCard";
 import { HeroSection } from "@/components/shared/HeroSection";
@@ -88,7 +89,7 @@ export default function HomePage() {
         title={homepageSections.trending.title}
         subtitle={homepageSections.trending.subtitle}
         products={trendingProducts}
-        viewAllHref={ROUTES.products}
+        viewAllHref={`${ROUTES.products}?section=trending`}
         background="blush"
       />
 
@@ -96,7 +97,7 @@ export default function HomePage() {
         title={homepageSections.newArrivals.title}
         subtitle={homepageSections.newArrivals.subtitle}
         products={newArrivalProducts}
-        viewAllHref={ROUTES.products}
+        viewAllHref={`${ROUTES.products}?section=new-arrivals`}
       />
 
       <PromoBanner
@@ -112,38 +113,27 @@ export default function HomePage() {
         title={homepageSections.bestSellers.title}
         subtitle={homepageSections.bestSellers.subtitle}
         products={bestSellerProducts}
-        viewAllHref={ROUTES.products}
+        viewAllHref={`${ROUTES.products}?section=best-sellers`}
         background="cream"
       />
 
-      <section className="bg-gradient-to-b from-blush-light via-blush-light/40 to-transparent py-16 sm:py-20">
-        <Container>
-          <Reveal className="mb-10 flex flex-col items-center gap-2 text-center sm:mb-12">
-            <h2 className="text-3xl font-bold tracking-tight text-text-primary sm:text-[32px]">
-              {homepageSections.featuredCollections.title}
-            </h2>
-            <p className="max-w-lg text-base text-text-secondary">
-              {homepageSections.featuredCollections.subtitle}
-            </p>
-          </Reveal>
-
-          <Reveal
-            stagger
-            className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
-          >
-            {featuredCollections.map((collection) => (
-              <RevealItem key={collection.slug}>
-                <CollectionCard
-                  name={collection.name}
-                  slug={collection.slug}
-                  image={collection.image}
-                  description={collection.description}
-                />
-              </RevealItem>
-            ))}
-          </Reveal>
-        </Container>
-      </section>
+      <Carousel
+        title={homepageSections.featuredCollections.title}
+        subtitle={homepageSections.featuredCollections.subtitle}
+        viewAllHref={`${ROUTES.products}?section=collections`}
+        ariaLabel={homepageSections.featuredCollections.title}
+        background="blush"
+      >
+        {featuredCollections.map((collection) => (
+          <CollectionCard
+            key={collection.slug}
+            name={collection.name}
+            slug={collection.slug}
+            image={collection.image}
+            description={collection.description}
+          />
+        ))}
+      </Carousel>
 
       <WhyChooseUs features={whyChooseUsFeatures} subtitle={homepageSections.whyChooseUs.subtitle} />
 

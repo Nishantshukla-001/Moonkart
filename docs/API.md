@@ -214,6 +214,8 @@ GET
 /api/categories
 ```
 
+Returns only active categories, each with its active subcategories nested.
+
 Get Category
 
 GET
@@ -222,9 +224,31 @@ GET
 /api/categories/{slug}
 ```
 
+Returns a category with its active subcategories nested.
+
 ---
 
-# 6. Product APIs
+# 6. Brand APIs
+
+Get Brands
+
+GET
+
+```
+/api/brands
+```
+
+Get Brand
+
+GET
+
+```
+/api/brands/{slug}
+```
+
+---
+
+# 7. Product APIs
 
 Get Products
 
@@ -233,6 +257,8 @@ GET
 ```
 /api/products
 ```
+
+Query parameters (all optional): `page`, `pageSize` (max 48), `category` (slug), `subCategory` (slug), `brand` (slug), `search`, `minPrice`, `maxPrice`, `size`, `color`, `sort` (`newest` | `price-asc` | `price-desc` | `rating` | `name`).
 
 Get Product
 
@@ -247,8 +273,10 @@ Search Products
 GET
 
 ```
-/api/products/search
+/api/products/search?q={query}
 ```
+
+Accepts the same filter/sort/pagination parameters as `GET /api/products`, in addition to `q`.
 
 Featured Products
 
@@ -279,12 +307,16 @@ Related Products
 GET
 
 ```
-/api/products/{id}/related
+/api/products/{slug}/related
 ```
+
+Products are looked up by slug throughout (not id), for consistency with the `/products/{slug}` page route.
 
 ---
 
-# 7. Cart APIs
+# 8. Cart APIs
+
+A signed-out (guest) cart lives entirely in the browser (`localStorage`) and never calls these endpoints — they exist only for an authenticated cart.
 
 Get Cart
 
@@ -301,6 +333,8 @@ POST
 ```
 /api/cart
 ```
+
+Body: `{ productId, variantId?, quantity }`. Adding a product/variant already in the cart increases its quantity instead of creating a duplicate line.
 
 Update Quantity
 
@@ -326,9 +360,21 @@ DELETE
 /api/cart
 ```
 
+Merge Guest Cart
+
+POST
+
+```
+/api/cart/merge
+```
+
+Body: `{ items: [{ productId, variantId?, quantity }] }`. Called once, right after login, to fold the guest (`localStorage`) cart into the user's server-side cart.
+
 ---
 
-# 8. Wishlist APIs
+# 9. Wishlist APIs
+
+Wishlist requires an authenticated account — there is no guest wishlist.
 
 Get Wishlist
 
@@ -356,7 +402,7 @@ DELETE
 
 ---
 
-# 9. Checkout APIs
+# 10. Checkout APIs
 
 Create Checkout
 
@@ -384,7 +430,7 @@ POST
 
 ---
 
-# 10. Order APIs
+# 11. Order APIs
 
 Get Orders
 
@@ -428,7 +474,7 @@ GET
 
 ---
 
-# 11. Review APIs
+# 12. Review APIs
 
 Get Reviews
 
@@ -464,7 +510,7 @@ DELETE
 
 ---
 
-# 12. Admin APIs
+# 13. Admin APIs
 
 Dashboard
 
@@ -500,7 +546,135 @@ DELETE
 
 ---
 
-# 13. Admin Product APIs
+# 14. Admin Category APIs
+
+Get Categories
+
+GET
+
+```
+/api/admin/categories
+```
+
+Includes inactive categories (unlike the public endpoint).
+
+Get Category
+
+GET
+
+```
+/api/admin/categories/{id}
+```
+
+Create Category
+
+POST
+
+```
+/api/admin/categories
+```
+
+Update Category
+
+PUT
+
+```
+/api/admin/categories/{id}
+```
+
+Delete Category
+
+DELETE
+
+```
+/api/admin/categories/{id}
+```
+
+Rejected with `409` if the category still has products.
+
+---
+
+# 15. Admin Subcategory APIs
+
+Get Subcategories
+
+GET
+
+```
+/api/admin/subcategories
+```
+
+Optional `?categoryId=` filter.
+
+Create Subcategory
+
+POST
+
+```
+/api/admin/subcategories
+```
+
+Update Subcategory
+
+PUT
+
+```
+/api/admin/subcategories/{id}
+```
+
+Delete Subcategory
+
+DELETE
+
+```
+/api/admin/subcategories/{id}
+```
+
+Rejected with `409` if the subcategory still has products.
+
+---
+
+# 16. Admin Brand APIs
+
+Get Brands
+
+GET
+
+```
+/api/admin/brands
+```
+
+Includes inactive brands (unlike the public endpoint).
+
+Create Brand
+
+POST
+
+```
+/api/admin/brands
+```
+
+Update Brand
+
+PUT
+
+```
+/api/admin/brands/{id}
+```
+
+Delete Brand
+
+DELETE
+
+```
+/api/admin/brands/{id}
+```
+
+Rejected with `409` if the brand still has products.
+
+---
+
+# 17. Admin Product APIs
 
 The Admin manages the entire product catalog directly — there is no seller-scoped product API.
 
@@ -510,6 +684,16 @@ GET
 
 ```
 /api/admin/products
+```
+
+Paginated (`?page=&pageSize=`); includes unpublished products.
+
+Get Product
+
+GET
+
+```
+/api/admin/products/{id}
 ```
 
 Create Product
@@ -528,6 +712,8 @@ PUT
 /api/admin/products/{id}
 ```
 
+Used for every field update, including stock (inventory) and `isFeatured`/`isBestSeller` — there is no separate inventory or feature-toggle endpoint.
+
 Delete Product
 
 DELETE
@@ -536,25 +722,61 @@ DELETE
 /api/admin/products/{id}
 ```
 
-Manage Inventory
+---
 
-PUT
+# 18. Admin Product Image APIs
 
-```
-/api/admin/products/{id}/inventory
-```
+Add Image
 
-Feature Product
-
-PUT
+POST
 
 ```
-/api/admin/products/{id}/feature
+/api/admin/products/{id}/images
+```
+
+Body: `{ imageUrl, displayOrder? }`.
+
+Delete Image
+
+DELETE
+
+```
+/api/admin/products/{id}/images/{imageId}
 ```
 
 ---
 
-# 14. Admin Order APIs
+# 19. Admin Product Variant APIs
+
+Add Variant
+
+POST
+
+```
+/api/admin/products/{id}/variants
+```
+
+Body: `{ size?, color?, sku?, price?, salePrice?, stock, image?, isDefault? }`.
+
+Update Variant
+
+PUT
+
+```
+/api/admin/products/{id}/variants/{variantId}
+```
+
+Delete Variant
+
+DELETE
+
+```
+/api/admin/products/{id}/variants/{variantId}
+```
+
+---
+
+# 20. Admin Order APIs
 
 Get Orders
 
@@ -574,7 +796,7 @@ PUT
 
 ---
 
-# 15. Admin Coupon APIs
+# 21. Admin Coupon APIs
 
 Create Coupon
 
@@ -610,7 +832,7 @@ DELETE
 
 ---
 
-# 16. Payment APIs
+# 22. Payment APIs
 
 Create Payment
 
@@ -646,7 +868,7 @@ POST
 
 ---
 
-# 17. Notification APIs
+# 23. Notification APIs
 
 Get Notifications
 
@@ -674,7 +896,7 @@ DELETE
 
 ---
 
-# 18. Contact APIs
+# 24. Contact APIs
 
 Submit Contact Form
 
@@ -694,7 +916,7 @@ POST
 
 ---
 
-# 19. API Standards
+# 25. API Standards
 
 * Use RESTful naming conventions.
 * Return appropriate HTTP status codes.

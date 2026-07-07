@@ -3,6 +3,7 @@
 import { ChevronDown, Heart, LogOut, Menu, ShieldCheck, ShoppingBag, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -28,21 +29,31 @@ import { ROUTES } from "@/constants/routes";
 import { siteConfig } from "@/constants/config";
 import { UserMenu } from "@/features/auth/components/UserMenu";
 import { useAuth } from "@/hooks/useAuth";
-import { categories } from "@/lib/placeholderData";
+import { useCart } from "@/hooks/useCart";
+import type { ICategory } from "@/types/product";
 
 const primaryNavLinks = [
   { label: "Home", href: ROUTES.home },
   { label: "Products", href: ROUTES.products },
 ];
 
-export function Navbar() {
+export function Navbar({ categories }: { categories: ICategory[] }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { profile, signOut } = useAuth();
+  const itemCount = useCart((state) => state.itemCount);
+  const setDrawerOpen = useCart((state) => state.setDrawerOpen);
+  const router = useRouter();
 
   async function handleMobileSignOut() {
     await signOut();
     toast.success("Logged out.");
     setMobileOpen(false);
+  }
+
+  function handleSearch(query: string) {
+    if (!query) return;
+    setMobileOpen(false);
+    router.push(`${ROUTES.search}?q=${encodeURIComponent(query)}`);
   }
 
   return (
@@ -61,7 +72,10 @@ export function Navbar() {
             className="rounded-full object-cover shadow-soft"
             priority
           />
-          <span className="font-heading text-xl font-bold text-text-primary">
+          {/* Hidden below 400px — logo mark + 4 icon buttons (wishlist/cart/
+              account/menu) don't fit alongside the full wordmark at the
+              smallest supported widths (320–390px). */}
+          <span className="hidden font-heading text-xl font-bold text-text-primary min-[400px]:inline">
             {siteConfig.name}
           </span>
         </Link>
@@ -96,7 +110,7 @@ export function Navbar() {
         </nav>
 
         <div className="hidden flex-1 md:block">
-          <SearchBar className="max-w-md" />
+          <SearchBar className="max-w-md" onSearch={handleSearch} />
         </div>
 
         <div className="ml-auto flex items-center gap-1">
@@ -112,11 +126,16 @@ export function Navbar() {
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Cart"
-            className="hover:text-blush-hover"
-            render={<Link href={ROUTES.cart} />}
+            aria-label={`Cart${itemCount > 0 ? ` (${itemCount} items)` : ""}`}
+            className="relative hover:text-blush-hover"
+            onClick={() => setDrawerOpen(true)}
           >
             <ShoppingBag />
+            {itemCount > 0 && (
+              <span className="absolute top-0.5 right-0.5 flex size-4 items-center justify-center rounded-full bg-blush-hover text-[10px] font-semibold text-text-primary">
+                {itemCount > 9 ? "9+" : itemCount}
+              </span>
+            )}
           </Button>
           <UserMenu />
 
@@ -133,7 +152,7 @@ export function Navbar() {
                 <SheetTitle>{siteConfig.name}</SheetTitle>
               </SheetHeader>
               <div className="flex flex-col gap-4 px-4">
-                <SearchBar />
+                <SearchBar onSearch={handleSearch} />
                 <nav className="flex flex-col gap-1">
                   {primaryNavLinks.map((link) => (
                     <Link

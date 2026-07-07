@@ -1,5 +1,7 @@
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+
+import { VERIFIED_SUPABASE_ID_HEADER } from "@/lib/supabase/constants";
 
 /**
  * Refreshes the Supabase session for the incoming request and returns the
@@ -7,7 +9,12 @@ import { NextResponse, type NextRequest } from "next/server";
  * session cookies. Called once from the root middleware.ts.
  */
 export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({ request });
+  // Never trust a client-supplied copy of this header — strip it
+  // unconditionally before (maybe) setting our own verified value below.
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.delete(VERIFIED_SUPABASE_ID_HEADER);
+
+  const cookiesToApply: { name: string; value: string; options?: CookieOptions }[] = [];
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,10 +26,7 @@ export async function updateSession(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          response = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          );
+          cookiesToApply.push(...cookiesToSet);
         },
       },
     }
@@ -31,6 +35,13 @@ export async function updateSession(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (user) {
+    requestHeaders.set(VERIFIED_SUPABASE_ID_HEADER, user.id);
+  }
+
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  cookiesToApply.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
 
   return { response, user };
 }

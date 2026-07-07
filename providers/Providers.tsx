@@ -2,7 +2,9 @@
 
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/providers/AuthProvider";
+import { CartProvider } from "@/providers/CartProvider";
 import { ThemeProvider } from "@/providers/ThemeProvider";
+import { WishlistProvider } from "@/providers/WishlistProvider";
 
 /**
  * Root provider composition. Additional providers (React Query) are added
@@ -13,8 +15,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider>
       <AuthProvider>
-        {children}
-        <Toaster position="top-right" richColors closeButton />
+        <CartProvider>
+          <WishlistProvider>
+            {children}
+            <Toaster position="top-right" richColors closeButton />
+          </WishlistProvider>
+        </CartProvider>
       </AuthProvider>
     </ThemeProvider>
   );

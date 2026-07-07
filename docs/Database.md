@@ -85,7 +85,6 @@ Table Name: categories
 Columns
 
 * id
-* parentId
 * name
 * slug
 * image
@@ -96,13 +95,19 @@ Columns
 
 Relationship
 
+One Category contains many Subcategories.
+
 One Category contains many Products.
 
 ---
 
-# 4. Product Table
+# 4. Subcategory Table
 
-Table Name: products
+Table Name: sub_categories
+
+Purpose:
+
+A second, explicit taxonomy level under Category (e.g. Category "Apparel" → Subcategories "Dresses", "Tops"). Introduced in Phase 4 as its own table rather than a self-referential `parentId` on Category, so the two levels stay unambiguous.
 
 Columns
 
@@ -110,10 +115,56 @@ Columns
 * categoryId
 * name
 * slug
+* image
+* description
+* isActive
+* createdAt
+* updatedAt
+
+Relationship
+
+Belongs to one Category.
+
+Has many Products.
+
+---
+
+# 5. Brand Table
+
+Table Name: brands
+
+Columns
+
+* id
+* name
+* slug
+* logo
+* description
+* isActive
+* createdAt
+* updatedAt
+
+Relationship
+
+Has many Products.
+
+---
+
+# 6. Product Table
+
+Table Name: products
+
+Columns
+
+* id
+* categoryId
+* subCategoryId
+* brandId
+* name
+* slug
 * shortDescription
 * description
 * sku
-* brand
 * price
 * salePrice
 * stock
@@ -123,6 +174,7 @@ Columns
 * averageRating
 * reviewCount
 * isFeatured
+* isBestSeller
 * isPublished
 * hasVariants
 * createdAt
@@ -130,13 +182,19 @@ Columns
 
 Notes:
 
-* `price`, `salePrice`, and `stock` represent the base/default values for a product without variants, or the display fallback for a product with variants.
+* `price`, `salePrice`, and `stock` represent the base/default values for a product without variants, or the display fallback for a product with variants. Both are stored as whole-rupee integers (no paise), matching the rest of the application.
 * `hasVariants` indicates whether purchasing must go through Product Variants rather than the base product fields.
+* `brandId` and `subCategoryId` are optional — a product always belongs to a Category, but a Brand or Subcategory is not mandatory.
+* `isBestSeller` is an Admin-curated flag (like `isFeatured`), since there is no Orders/sales data yet to compute best-sellers automatically. "New Arrivals" is not a stored flag — it is derived by sorting on `createdAt`.
 * Products belong directly to the store (managed by Admin). There is no `sellerId` — MoonKart is single-vendor.
 
 Relationship
 
 Belongs to one Category.
+
+Belongs to one Subcategory (optional).
+
+Belongs to one Brand (optional).
 
 Has many Images.
 
@@ -148,7 +206,7 @@ Has many Order Items.
 
 ---
 
-# 5. Product Variants Table
+# 7. Product Variants Table
 
 Table Name: product_variants
 
@@ -175,11 +233,11 @@ Relationship
 
 Many Variants belong to one Product.
 
-Cart Items, Wishlist Items, and Order Items may each reference a specific Variant in addition to the Product.
+Cart Items and Wishlist Items may each reference a specific Variant in addition to the Product. (Order Items will too, once Orders are implemented.)
 
 ---
 
-# 6. Product Images Table
+# 8. Product Images Table
 
 Table Name: product_images
 
@@ -197,7 +255,7 @@ Many Images belong to one Product.
 
 ---
 
-# 7. Cart Table
+# 9. Cart Table
 
 Table Name: carts
 
@@ -210,13 +268,17 @@ Columns
 
 Relationship
 
-One Cart belongs to one User.
+One Cart belongs to one User, created on first use.
 
 Contains many Cart Items.
 
+Notes:
+
+* A **guest** (signed-out) cart lives entirely in the browser (`localStorage`) and never touches this table. It is merged into a real `Cart` row the moment the shopper logs in.
+
 ---
 
-# 8. Cart Items Table
+# 10. Cart Items Table
 
 Table Name: cart_items
 
@@ -230,9 +292,14 @@ Columns
 * price
 * createdAt
 
+Notes:
+
+* `price` is a snapshot of the unit price at the time the item was added (the product's or variant's sale price, falling back to its regular price).
+* Unique on (`cartId`, `productId`, `variantId`) — adding the same product/variant again increases `quantity` instead of creating a second row.
+
 ---
 
-# 9. Wishlist Table
+# 11. Wishlist Table
 
 Table Name: wishlists
 
@@ -242,9 +309,15 @@ Columns
 * userId
 * createdAt
 
+Notes:
+
+* Unlike Cart, Wishlist has no guest mode — it requires an authenticated account.
+
 ---
 
-# 10. Wishlist Items Table
+# 12. Wishlist Items Table
+
+Table Name: wishlist_items
 
 Columns
 
@@ -253,9 +326,13 @@ Columns
 * productId
 * variantId
 
+Notes:
+
+* Unique on (`wishlistId`, `productId`, `variantId`) — adding the same product again is a no-op, not a duplicate.
+
 ---
 
-# 11. Address Table
+# 13. Address Table
 
 Columns
 
@@ -273,7 +350,7 @@ Columns
 
 ---
 
-# 12. Orders Table
+# 14. Orders Table
 
 Table Name: orders
 
@@ -306,7 +383,7 @@ Order Status
 
 ---
 
-# 13. Order Items Table
+# 15. Order Items Table
 
 Columns
 
@@ -320,7 +397,7 @@ Columns
 
 ---
 
-# 14. Payments Table
+# 16. Payments Table
 
 Columns
 
@@ -335,7 +412,7 @@ Columns
 
 ---
 
-# 15. Reviews Table
+# 17. Reviews Table
 
 Columns
 
@@ -349,7 +426,7 @@ Columns
 
 ---
 
-# 16. Coupons Table
+# 18. Coupons Table
 
 Columns
 
@@ -366,7 +443,7 @@ Columns
 
 ---
 
-# 17. Notifications Table
+# 19. Notifications Table
 
 Columns
 
@@ -380,7 +457,7 @@ Columns
 
 ---
 
-# 18. Banner Table
+# 20. Banner Table
 
 Columns
 
@@ -394,7 +471,7 @@ Columns
 
 ---
 
-# 19. Contact Messages Table
+# 21. Contact Messages Table
 
 Columns
 
@@ -408,7 +485,7 @@ Columns
 
 ---
 
-# 20. Newsletter Table
+# 22. Newsletter Table
 
 Columns
 
@@ -418,7 +495,7 @@ Columns
 
 ---
 
-# 21. Audit Logs Table
+# 23. Audit Logs Table
 
 Purpose
 
@@ -436,7 +513,7 @@ Columns
 
 ---
 
-# 22. Relationships Summary
+# 24. Relationships Summary
 
 User
 
@@ -458,7 +535,15 @@ Product Variants
 
 ↓
 
+Subcategory
+
+↓
+
 Category
+
+↓
+
+Brand
 
 ↓
 
@@ -474,23 +559,28 @@ Reviews
 
 ---
 
-# 23. Indexes
+# 25. Indexes
 
 Create indexes for:
 
 * email
 * slug
 * categoryId
+* subCategoryId
+* brandId
 * userId
 * productId
 * orderNumber
 * paymentStatus
 * orderStatus
 * supabaseId
+* isFeatured
+* isBestSeller
+* isPublished
 
 ---
 
-# 24. General Rules
+# 26. General Rules
 
 * Use UUIDs for primary keys.
 * Enforce foreign key constraints.

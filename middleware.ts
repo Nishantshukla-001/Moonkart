@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { UserRole } from "@/constants/roles";
+import { ROUTES } from "@/constants/routes";
 import { updateSession } from "@/lib/supabase/middleware";
 
 /**
@@ -43,6 +44,17 @@ export async function middleware(request: NextRequest) {
 
   if (matchesPrefix(pathname, ADMIN_ROUTES) && role !== UserRole.ADMIN) {
     return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  // Handled here (a plain HTTP redirect before any React render) rather than
+  // via `redirect()` in app/admin/page.tsx, which — for a full top-level
+  // navigation straight to "/admin" — produced a spurious dev-mode
+  // "Rendered more hooks than during the previous render" warning during
+  // the client's initial hydration. app/admin/page.tsx keeps its own
+  // `redirect()` as a defense-in-depth fallback; this branch means it never
+  // actually has to fire in normal operation.
+  if (pathname === "/admin") {
+    return NextResponse.redirect(new URL(ROUTES.adminDashboard, request.url));
   }
 
   return response;

@@ -59,6 +59,10 @@ export const trendingProducts: PlaceholderProduct[] = [
   { name: "Rose Gold Layered Necklace", slug: "rose-gold-layered-necklace", image: placeholderImage("moonkart-p-rose-necklace", 600, 600), category: "Fine Jewellery", rating: 4.7, price: 2299, badge: "trending" },
   { name: "Silk Wrap Blouse", slug: "silk-wrap-blouse", image: placeholderImage("moonkart-p-silk-blouse", 600, 600), category: "Apparel", rating: 4.6, price: 3199, oldPrice: 3999, badge: "sale" },
   { name: "Matte Velvet Lipstick Duo", slug: "matte-velvet-lipstick-duo", image: placeholderImage("moonkart-p-lipstick-duo", 600, 600), category: "Beauty & Skincare", rating: 4.9, price: 899, badge: "trending" },
+  { name: "Emerald Halo Ring", slug: "emerald-halo-ring", image: placeholderImage("moonkart-p-emerald-ring", 600, 600), category: "Fine Jewellery", rating: 4.7, price: 2599, badge: "trending" },
+  { name: "Tiered Ruffle Maxi Dress", slug: "tiered-ruffle-maxi-dress", image: placeholderImage("moonkart-p-ruffle-maxi", 600, 600), category: "Apparel", rating: 4.6, price: 3499, oldPrice: 4299, badge: "sale" },
+  { name: "Woven Straw Tote", slug: "woven-straw-tote", image: placeholderImage("moonkart-p-straw-tote", 600, 600), category: "Bags & Accessories", rating: 4.5, price: 1999, badge: "trending" },
+  { name: "Rose Quartz Facial Roller", slug: "rose-quartz-facial-roller", image: placeholderImage("moonkart-p-facial-roller", 600, 600), category: "Beauty & Skincare", rating: 4.8, price: 799, badge: "trending" },
 ];
 
 export const newArrivalProducts: PlaceholderProduct[] = [
@@ -66,6 +70,10 @@ export const newArrivalProducts: PlaceholderProduct[] = [
   { name: "Quilted Chain Sling Bag", slug: "quilted-chain-sling-bag", image: placeholderImage("moonkart-p-sling-bag", 600, 600), category: "Bags & Accessories", rating: 4.7, price: 2799, badge: "new" },
   { name: "Satin Slip Dress", slug: "satin-slip-dress", image: placeholderImage("moonkart-p-slip-dress", 600, 600), category: "Apparel", rating: 4.5, price: 2999, badge: "new" },
   { name: "Hydrating Glow Serum", slug: "hydrating-glow-serum", image: placeholderImage("moonkart-p-glow-serum", 600, 600), category: "Beauty & Skincare", rating: 4.8, price: 1199, badge: "new" },
+  { name: "Baguette Diamond Studs", slug: "baguette-diamond-studs", image: placeholderImage("moonkart-p-diamond-studs", 600, 600), category: "Fine Jewellery", rating: 4.9, price: 3299, badge: "new" },
+  { name: "Linen Wide-Leg Trousers", slug: "linen-wide-leg-trousers", image: placeholderImage("moonkart-p-linen-trousers", 600, 600), category: "Apparel", rating: 4.4, price: 2399, badge: "new" },
+  { name: "Platform Block Heels", slug: "platform-block-heels", image: placeholderImage("moonkart-p-block-heels", 600, 600), category: "Footwear", rating: 4.6, price: 2699, badge: "new" },
+  { name: "Vitamin C Brightening Serum", slug: "vitamin-c-brightening-serum", image: placeholderImage("moonkart-p-vitamin-serum", 600, 600), category: "Beauty & Skincare", rating: 4.7, price: 1399, badge: "new" },
 ];
 
 export const bestSellerProducts: PlaceholderProduct[] = [
@@ -73,6 +81,10 @@ export const bestSellerProducts: PlaceholderProduct[] = [
   { name: "Embroidered Mules", slug: "embroidered-mules", image: placeholderImage("moonkart-p-mules", 600, 600), category: "Footwear", rating: 4.8, price: 2199 },
   { name: "Cashmere Blend Scarf", slug: "cashmere-blend-scarf", image: placeholderImage("moonkart-p-scarf", 600, 600), category: "Bags & Accessories", rating: 4.7, price: 1799 },
   { name: "Rose Petal Candle Set", slug: "rose-petal-candle-set", image: placeholderImage("moonkart-p-candle-set", 600, 600), category: "Home & Lifestyle", rating: 4.9, price: 999, badge: "limited" },
+  { name: "Layered Initial Pendant", slug: "layered-initial-pendant", image: placeholderImage("moonkart-p-initial-pendant", 600, 600), category: "Fine Jewellery", rating: 4.8, price: 1699, badge: "exclusive" },
+  { name: "Tailored Blazer Dress", slug: "tailored-blazer-dress", image: placeholderImage("moonkart-p-blazer-dress", 600, 600), category: "Apparel", rating: 4.7, price: 3799 },
+  { name: "Structured Top-Handle Bag", slug: "structured-top-handle-bag", image: placeholderImage("moonkart-p-top-handle-bag", 600, 600), category: "Bags & Accessories", rating: 4.9, price: 3299, badge: "exclusive" },
+  { name: "Overnight Repair Face Oil", slug: "overnight-repair-face-oil", image: placeholderImage("moonkart-p-face-oil", 600, 600), category: "Beauty & Skincare", rating: 4.8, price: 1499, badge: "limited" },
 ];
 
 export const featuredCollections: PlaceholderCollection[] = [
