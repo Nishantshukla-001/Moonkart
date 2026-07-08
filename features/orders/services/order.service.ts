@@ -77,10 +77,27 @@ export async function placeOrder(userId: string, addressId: string): Promise<Pla
 
   try {
     const orderId = await prisma.$transaction(async (tx) => {
+      // Acquire a row-level lock on the cart itself before touching its
+      // items. A genuine UPDATE (unlike a plain SELECT under Postgres's
+      // default READ COMMITTED isolation) blocks a concurrent duplicate
+      // checkout — e.g. a double-clicked "Place Order" firing two requests
+      // — until this transaction commits or rolls back. Without this, both
+      // requests would independently read the same not-yet-deleted cart
+      // items and each successfully place its own order for them.
+      await tx.cart.update({ where: { id: cart.id }, data: { updatedAt: new Date() } });
+
+      const freshCartItems = await tx.cartItem.findMany({
+        where: { cartId: cart.id },
+        include: { product: true, variant: true },
+      });
+      if (freshCartItems.length === 0) {
+        throw new CheckoutError("Your cart is empty.");
+      }
+
       let subtotal = 0;
       const itemsData: Prisma.OrderItemCreateManyOrderInput[] = [];
 
-      for (const line of cart.items) {
+      for (const line of freshCartItems) {
         // Re-fetch fresh inside the transaction so the stock check below is
         // consistent with the decrement, not the (possibly stale) row read
         // moments earlier outside the transaction.
