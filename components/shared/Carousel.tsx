@@ -26,7 +26,7 @@ interface CarouselProps {
   className?: string;
 }
 
-const sectionBackgrounds = {
+export const sectionBackgrounds = {
   white: "",
   blush: "bg-blush-light/40",
   cream: "bg-bg-section",

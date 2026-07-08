@@ -15,10 +15,16 @@ const wishlistInclude = {
 };
 
 export async function getOrCreateWishlist(userId: string) {
-  const existing = await prisma.wishlist.findUnique({ where: { userId }, include: wishlistInclude });
-  if (existing) return existing;
-
-  return prisma.wishlist.create({ data: { userId }, include: wishlistInclude });
+  // upsert (not findUnique-then-create) so two concurrent calls for a
+  // brand-new user (e.g. a page-load hydrate racing a hydrate-and-toggle
+  // request) can't both see "no wishlist" and both try to create one — the
+  // second `create` would fail on the unique `userId` constraint.
+  return prisma.wishlist.upsert({
+    where: { userId },
+    create: { userId },
+    update: {},
+    include: wishlistInclude,
+  });
 }
 
 export async function addWishlistItem(

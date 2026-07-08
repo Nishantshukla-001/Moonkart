@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import type { NextRequest } from "next/server";
 
 import {
@@ -39,6 +40,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
   try {
     const product = await updateProduct(id, parsed.data);
+    revalidatePath("/", "page");
     return apiSuccess(product, "Product updated.");
   } catch {
     return apiError("Product not found, or the slug/SKU is already in use.", [], 409);
@@ -53,6 +55,7 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
 
   try {
     await deleteProduct(id);
+    revalidatePath("/", "page");
     return apiSuccess(null, "Product deleted.");
   } catch {
     return apiError("Product not found.", [], 404);

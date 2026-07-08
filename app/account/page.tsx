@@ -20,12 +20,24 @@ const availableLinks = [
     icon: UserIcon,
     description: "Update your personal details and password.",
   },
-];
-
-const comingSoon = [
-  { label: "My Orders", icon: Package, description: "Track and manage your orders." },
-  { label: "Wishlist", icon: Heart, description: "Items you're saving for later." },
-  { label: "Addresses", icon: MapPin, description: "Manage your delivery addresses." },
+  {
+    label: "My Orders",
+    href: ROUTES.orders,
+    icon: Package,
+    description: "Track and manage your orders.",
+  },
+  {
+    label: "Wishlist",
+    href: ROUTES.wishlist,
+    icon: Heart,
+    description: "Items you're saving for later.",
+  },
+  {
+    label: "Addresses",
+    href: ROUTES.addresses,
+    icon: MapPin,
+    description: "Manage your delivery addresses.",
+  },
 ];
 
 export default async function AccountPage() {
@@ -77,25 +89,6 @@ export default async function AccountPage() {
                 <p className="text-sm text-text-muted">{link.description}</p>
               </div>
             </Link>
-          </Card>
-        ))}
-
-        {comingSoon.map((item) => (
-          <Card key={item.label} className="flex flex-col gap-3 p-6 opacity-60">
-            <div className="flex size-11 items-center justify-center rounded-full bg-bg-section">
-              <item.icon className="size-5 text-text-muted" aria-hidden="true" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="font-heading text-base font-semibold text-text-primary">
-                  {item.label}
-                </h2>
-                <span className="rounded-full bg-bg-section px-2 py-0.5 text-xs font-medium text-text-muted">
-                  Coming soon
-                </span>
-              </div>
-              <p className="text-sm text-text-muted">{item.description}</p>
-            </div>
           </Card>
         ))}
       </div>

@@ -1,18 +1,20 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { UserRole } from "@/constants/roles";
 import { ROUTES } from "@/constants/routes";
 import { updateSession } from "@/lib/supabase/middleware";
 
 /**
- * Coarse-grained, fast route gating using the role stored in the Supabase
- * session's `user_metadata` (set at signup). This runs on every request in
- * the Edge runtime, so it never touches Prisma/Postgres.
+ * Coarse-grained authentication gate only — checks that a session exists,
+ * nothing more. This runs on every request in the Edge runtime, so it never
+ * touches Prisma/Postgres.
  *
- * It is the first line of defense only — every protected Server Component
+ * Role-based authorization is NOT done here. Supabase's `user_metadata.role`
+ * is only ever set at signup (always `CUSTOMER`) and has no path to reflect
+ * a Prisma-only role change (e.g. promoting a user to ADMIN directly in the
+ * database), so gating on it here would incorrectly lock out real admins
+ * whose metadata never got synced. Every protected Server Component
  * re-verifies the authoritative role via `lib/auth.ts` (Prisma) before
- * rendering, so a stale or missing metadata role can never grant access,
- * only cause an unnecessary redirect.
+ * rendering — that is the sole enforcement point for role checks.
  *
  * MoonKart is single-vendor: only Customer and Admin routes exist.
  */
@@ -38,12 +40,6 @@ export async function middleware(request: NextRequest) {
     const loginUrl = new URL("/auth/login", request.url);
     loginUrl.searchParams.set("redirectTo", pathname);
     return NextResponse.redirect(loginUrl);
-  }
-
-  const role = (user.user_metadata?.role as UserRole | undefined) ?? UserRole.CUSTOMER;
-
-  if (matchesPrefix(pathname, ADMIN_ROUTES) && role !== UserRole.ADMIN) {
-    return NextResponse.redirect(new URL("/", request.url));
   }
 
   // Handled here (a plain HTTP redirect before any React render) rather than

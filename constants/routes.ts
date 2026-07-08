@@ -10,6 +10,7 @@ export const ROUTES = {
   cart: "/cart",
   wishlist: "/wishlist",
   checkout: "/checkout",
+  checkoutSuccess: (orderNumber: string) => `/checkout/success/${orderNumber}`,
   orders: "/orders",
   order: (id: string) => `/orders/${id}`,
   profile: "/profile",

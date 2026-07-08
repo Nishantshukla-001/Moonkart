@@ -16,10 +16,16 @@ const cartInclude = {
 };
 
 export async function getOrCreateCart(userId: string) {
-  const existing = await prisma.cart.findUnique({ where: { userId }, include: cartInclude });
-  if (existing) return existing;
-
-  return prisma.cart.create({ data: { userId }, include: cartInclude });
+  // upsert (not findUnique-then-create) so two concurrent calls for a
+  // brand-new user (e.g. a page-load hydrate racing a hydrate-and-add-item
+  // request) can't both see "no cart" and both try to create one — the
+  // second `create` would fail on the unique `userId` constraint.
+  return prisma.cart.upsert({
+    where: { userId },
+    create: { userId },
+    update: {},
+    include: cartInclude,
+  });
 }
 
 async function resolveUnitPrice(productId: string, variantId: string | null | undefined) {

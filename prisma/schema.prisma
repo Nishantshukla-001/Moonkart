@@ -48,8 +48,10 @@ model User {
   createdAt    DateTime     @default(now()) @map("created_at")
   updatedAt    DateTime     @updatedAt @map("updated_at")
 
-  cart     Cart?
-  wishlist Wishlist?
+  cart      Cart?
+  wishlist  Wishlist?
+  addresses Address[]
+  orders    Order[]
 
   @@index([email])
   @@index([supabaseId])
@@ -151,6 +153,7 @@ model Product {
   variants      ProductVariant[]
   cartItems     CartItem[]
   wishlistItems WishlistItem[]
+  orderItems    OrderItem[]
 
   @@index([slug])
   @@index([categoryId])
@@ -194,6 +197,7 @@ model ProductVariant {
   product       Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
   cartItems     CartItem[]
   wishlistItems WishlistItem[]
+  orderItems    OrderItem[]
 
   @@index([productId])
   @@map("product_variants")
@@ -267,4 +271,144 @@ model WishlistItem {
   @@index([wishlistId])
   @@index([productId])
   @@map("wishlist_items")
+}
+
+// ---------------------------------------------------------------------------
+// Address, Order, OrderItem (docs/Database.md §13-15, Phase 7). A user may
+// have many addresses; one may be marked default. Orders snapshot the
+// customer, shipping address, and every line item's product/variant details
+// at the moment of purchase (productId/variantId/addressId are kept only for
+// convenience — onDelete: SetNull — so editing or deleting a product,
+// variant, or saved address later can never alter historical order data).
+// ---------------------------------------------------------------------------
+
+enum AddressType {
+  HOME
+  WORK
+  OTHER
+}
+
+model Address {
+  id           String      @id @default(uuid()) @db.Uuid
+  userId       String      @map("user_id") @db.Uuid
+  fullName     String      @map("full_name")
+  phone        String
+  email        String
+  addressLine1 String      @map("address_line1")
+  addressLine2 String?     @map("address_line2")
+  city         String
+  state        String
+  country      String      @default("India")
+  postalCode   String      @map("postal_code")
+  addressType  AddressType @default(HOME) @map("address_type")
+  isDefault    Boolean     @default(false) @map("is_default")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders Order[]
+
+  @@index([userId])
+  @@map("addresses")
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  PACKED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+}
+
+enum PaymentMethod {
+  COD
+}
+
+model Order {
+  id            String        @id @default(uuid()) @db.Uuid
+  orderNumber   String        @unique @map("order_number")
+  userId        String        @map("user_id") @db.Uuid
+  status        OrderStatus   @default(PENDING)
+  paymentMethod PaymentMethod @default(COD) @map("payment_method")
+  paymentStatus PaymentStatus @default(PENDING) @map("payment_status")
+
+  // Customer snapshot.
+  customerName  String @map("customer_name")
+  customerEmail String @map("customer_email")
+  customerPhone String @map("customer_phone")
+
+  // Shipping address snapshot.
+  addressId            String?     @map("address_id") @db.Uuid
+  shippingFullName     String      @map("shipping_full_name")
+  shippingPhone        String      @map("shipping_phone")
+  shippingEmail        String      @map("shipping_email")
+  shippingAddressLine1 String      @map("shipping_address_line1")
+  shippingAddressLine2 String?     @map("shipping_address_line2")
+  shippingCity         String      @map("shipping_city")
+  shippingState        String      @map("shipping_state")
+  shippingCountry      String      @map("shipping_country")
+  shippingPostalCode   String      @map("shipping_postal_code")
+  shippingAddressType  AddressType @map("shipping_address_type")
+
+  subtotal       Int @default(0)
+  discount       Int @default(0)
+  shippingCharge Int @default(0) @map("shipping_charge")
+  tax            Int @default(0)
+  totalAmount    Int @map("total_amount")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user    User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  address Address?    @relation(fields: [addressId], references: [id], onDelete: SetNull)
+  items   OrderItem[]
+
+  @@index([userId])
+  @@index([orderNumber])
+  @@index([status])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String  @id @default(uuid()) @db.Uuid
+  orderId   String  @map("order_id") @db.Uuid
+  productId String? @map("product_id") @db.Uuid
+  variantId String? @map("variant_id") @db.Uuid
+
+  // Product/variant snapshot.
+  productName  String  @map("product_name")
+  productSlug  String  @map("product_slug")
+  productImage String  @map("product_image")
+  sku          String?
+  variantLabel String? @map("variant_label")
+
+  unitPrice Int @map("unit_price")
+  quantity  Int
+  lineTotal Int @map("line_total")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  order   Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product?        @relation(fields: [productId], references: [id], onDelete: SetNull)
+  variant ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+/** Backs atomic per-month order-number sequencing (MK<yyyyMM><000001>). */
+model OrderSequence {
+  yearMonth String @id @map("year_month")
+  count     Int    @default(0)
+
+  @@map("order_sequences")
 }

@@ -1,16 +1,16 @@
-"use client";
+import { PackageSearch } from "lucide-react";
 
-import { useState } from "react";
-import { toast } from "sonner";
-
-import { Carousel } from "@/components/shared/Carousel";
-import { ProductCard } from "@/components/products/ProductCard";
-import type { PlaceholderProduct } from "@/lib/placeholderData";
+import { Container } from "@/components/layout/Container";
+import { Carousel, sectionBackgrounds } from "@/components/shared/Carousel";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { ProductCardConnected } from "@/features/products/components/ProductCardConnected";
+import { cn } from "@/lib/utils";
+import type { IProductWithRelations } from "@/types/product";
 
 interface ProductSectionProps {
   title: string;
   subtitle?: string;
-  products: PlaceholderProduct[];
+  products: IProductWithRelations[];
   viewAllHref: string;
   background?: "white" | "blush" | "cream";
 }
@@ -22,38 +22,20 @@ export function ProductSection({
   viewAllHref,
   background = "white",
 }: ProductSectionProps) {
-  const [wishlisted, setWishlisted] = useState<Set<string>>(new Set());
-
-  function toggleWishlist(slug: string, name: string) {
-    setWishlisted((current) => {
-      const next = new Set(current);
-      if (next.has(slug)) {
-        next.delete(slug);
-      } else {
-        next.add(slug);
-        toast.success(`${name} added to wishlist`);
-      }
-      return next;
-    });
+  if (products.length === 0) {
+    return (
+      <section className={cn("py-16 sm:py-20", sectionBackgrounds[background])}>
+        <Container>
+          <EmptyState icon={PackageSearch} title={`No ${title.toLowerCase()} yet`} description="Check back soon." />
+        </Container>
+      </section>
+    );
   }
 
   return (
     <Carousel title={title} subtitle={subtitle} viewAllHref={viewAllHref} ariaLabel={title} background={background}>
       {products.map((product) => (
-        <ProductCard
-          key={product.slug}
-          name={product.name}
-          slug={product.slug}
-          image={product.image}
-          category={product.category}
-          rating={product.rating}
-          price={product.price}
-          oldPrice={product.oldPrice}
-          badge={product.badge}
-          isWishlisted={wishlisted.has(product.slug)}
-          onToggleWishlist={() => toggleWishlist(product.slug, product.name)}
-          onAddToCart={() => toast.success(`${product.name} added to cart`)}
-        />
+        <ProductCardConnected key={product.id} product={product} />
       ))}
     </Carousel>
   );

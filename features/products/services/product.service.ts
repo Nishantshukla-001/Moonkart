@@ -103,6 +103,15 @@ export function getRelatedProducts(productId: string, categoryId: string, limit 
   });
 }
 
+export function getTrendingProducts(limit = 8) {
+  return prisma.product.findMany({
+    where: { isPublished: true, isTrending: true },
+    include: publicProductInclude,
+    orderBy: { createdAt: "desc" },
+    take: limit,
+  });
+}
+
 export function getFeaturedProducts(limit = 8) {
   return prisma.product.findMany({
     where: { isPublished: true, isFeatured: true },

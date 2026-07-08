@@ -107,8 +107,8 @@ export default function CartPage() {
               <span>Total</span>
               <span>{formatCurrency(subtotal)}</span>
             </div>
-            <Button size="lg" className="w-full" disabled title="Checkout is coming soon">
-              Checkout — Coming Soon
+            <Button size="lg" className="w-full" render={<Link href={ROUTES.checkout} />}>
+              Proceed to Checkout
             </Button>
           </Card>
         </div>

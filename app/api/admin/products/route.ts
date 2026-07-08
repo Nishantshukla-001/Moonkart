@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import type { NextRequest } from "next/server";
 
 import { createProduct, getProductsAdmin } from "@/features/products/services/product.service";
@@ -36,6 +37,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const product = await createProduct(parsed.data);
+    revalidatePath("/", "page");
     return apiSuccess(product, "Product created.", 201);
   } catch {
     return apiError("A product with this slug or SKU already exists, or the category is invalid.", [], 409);

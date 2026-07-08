@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 
 import { Container } from "@/components/layout/Container";
-import { Carousel } from "@/components/shared/Carousel";
 import { CategoryCard } from "@/components/categories/CategoryCard";
-import { CollectionCard } from "@/components/shared/CollectionCard";
 import { HeroSection } from "@/components/shared/HeroSection";
 import { InstagramGallery } from "@/components/shared/InstagramGallery";
 import { NewsletterSection } from "@/components/shared/NewsletterSection";
@@ -14,21 +12,19 @@ import { WhyChooseUs } from "@/components/shared/WhyChooseUs";
 import { ProductSection } from "@/components/products/ProductSection";
 import { ROUTES } from "@/constants/routes";
 import {
+  getBestSellers,
+  getFeaturedProducts,
+  getNewArrivals,
+  getTrendingProducts,
+} from "@/features/products/services/product.service";
+import {
   heroContent,
   homepageSections,
   newsletterContent,
   promoBannerContent,
   whyChooseUsFeatures,
 } from "@/lib/homepageContent";
-import {
-  bestSellerProducts,
-  categories,
-  featuredCollections,
-  instagramImages,
-  newArrivalProducts,
-  testimonials,
-  trendingProducts,
-} from "@/lib/placeholderData";
+import { categories, instagramImages, testimonials } from "@/lib/placeholderData";
 
 export const metadata: Metadata = {
   title: "Premium Fashion, Jewellery & Beauty Marketplace",
@@ -36,7 +32,20 @@ export const metadata: Metadata = {
     "Discover elegant jewellery, beauty essentials, and fashion at MoonKart — a premium marketplace curated for the modern woman.",
 };
 
-export default function HomePage() {
+// ISR: homepage product sections are re-generated in the background at most
+// once a minute, so admin edits/creates (which also call revalidatePath("/")
+// — see app/api/admin/products routes) show up immediately, while ordinary
+// traffic serves a cached page instead of hitting Prisma on every request.
+export const revalidate = 60;
+
+export default async function HomePage() {
+  const [trendingProducts, newArrivalProducts, bestSellerProducts, featuredProducts] = await Promise.all([
+    getTrendingProducts(8),
+    getNewArrivals(8),
+    getBestSellers(8),
+    getFeaturedProducts(8),
+  ]);
+
   return (
     <>
       <div className="pt-8">
@@ -117,23 +126,13 @@ export default function HomePage() {
         background="cream"
       />
 
-      <Carousel
+      <ProductSection
         title={homepageSections.featuredCollections.title}
         subtitle={homepageSections.featuredCollections.subtitle}
-        viewAllHref={`${ROUTES.products}?section=collections`}
-        ariaLabel={homepageSections.featuredCollections.title}
+        products={featuredProducts}
+        viewAllHref={`${ROUTES.products}?section=featured`}
         background="blush"
-      >
-        {featuredCollections.map((collection) => (
-          <CollectionCard
-            key={collection.slug}
-            name={collection.name}
-            slug={collection.slug}
-            image={collection.image}
-            description={collection.description}
-          />
-        ))}
-      </Carousel>
+      />
 
       <WhyChooseUs features={whyChooseUsFeatures} subtitle={homepageSections.whyChooseUs.subtitle} />
 
