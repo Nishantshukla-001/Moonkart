@@ -8,6 +8,8 @@ import { productQuerySchema } from "@/features/products/validation/productQuery.
 export const metadata: Metadata = {
   title: "Search Results",
   description: "Search the MoonKart catalog.",
+  // Search results are thin, query-dependent content — keep them out of the index to avoid duplicate-content penalties, while still letting crawlers follow links from the page.
+  robots: { index: false, follow: true },
 };
 
 interface SearchPageProps {

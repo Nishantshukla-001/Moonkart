@@ -13,24 +13,16 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Pagination } from "@/components/shared/Pagination";
-import { OrderStatusBadge } from "@/features/orders/components/OrderStatusBadge";
+import { ORDER_STATUS_LABELS, OrderStatusBadge } from "@/features/orders/components/OrderStatusBadge";
 import { ROUTES } from "@/constants/routes";
 import { adminOrderService } from "@/features/admin/services/adminOrder.service";
-import type { AdminOrderQuery, OrderStatusValue } from "@/features/orders/validation/order.schema";
+import { orderStatusSchema, type AdminOrderQuery, type OrderStatusValue } from "@/features/orders/validation/order.schema";
 import { debounce } from "@/utils/debounce";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { formatDate } from "@/utils/formatDate";
 import type { IPaginatedOrders } from "@/types/order";
 
-const STATUS_OPTIONS: OrderStatusValue[] = [
-  "PENDING",
-  "CONFIRMED",
-  "PROCESSING",
-  "PACKED",
-  "SHIPPED",
-  "DELIVERED",
-  "CANCELLED",
-];
+const STATUS_OPTIONS = orderStatusSchema.options;
 
 interface OrdersClientProps {
   result: IPaginatedOrders;
@@ -114,7 +106,7 @@ export function OrdersClient({ result, query }: OrdersClientProps) {
               <SelectItem value="all">All Status</SelectItem>
               {STATUS_OPTIONS.map((status) => (
                 <SelectItem key={status} value={status}>
-                  {status.charAt(0) + status.slice(1).toLowerCase()}
+                  {ORDER_STATUS_LABELS[status]}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -191,7 +183,7 @@ export function OrdersClient({ result, query }: OrdersClientProps) {
                       <SelectContent>
                         {STATUS_OPTIONS.map((status) => (
                           <SelectItem key={status} value={status}>
-                            {status.charAt(0) + status.slice(1).toLowerCase()}
+                            {ORDER_STATUS_LABELS[status]}
                           </SelectItem>
                         ))}
                       </SelectContent>

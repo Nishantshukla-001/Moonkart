@@ -2,6 +2,8 @@ import "server-only";
 
 import type { Prisma } from "@prisma/client";
 
+import { notifyWishlistersOfRestock } from "@/features/notifications/services/notification.service";
+import { destroyCloudinaryAsset } from "@/lib/cloudinary";
 import { prisma } from "@/lib/prisma";
 import type { ProductQuery } from "@/features/products/validation/productQuery.schema";
 import type {
@@ -94,6 +96,14 @@ export function getProductBySlug(slug: string) {
   });
 }
 
+/** Slug + updatedAt only — sitemap.xml needs no other fields for potentially hundreds of published products. */
+export function getAllProductSlugsForSitemap() {
+  return prisma.product.findMany({
+    where: { isPublished: true },
+    select: { slug: true, updatedAt: true },
+  });
+}
+
 export function getRelatedProducts(productId: string, categoryId: string, limit = 8) {
   return prisma.product.findMany({
     where: { categoryId, isPublished: true, id: { not: productId } },
@@ -136,6 +146,16 @@ export function getBestSellers(limit = 8) {
     include: publicProductInclude,
     orderBy: { createdAt: "desc" },
     take: limit,
+  });
+}
+
+/** Rated by actual customer reviews, unlike `getBestSellers` which reflects the admin-curated `isBestSeller` flag. */
+export function getTopRatedProducts(limit = 5) {
+  return prisma.product.findMany({
+    where: { isPublished: true, reviewCount: { gt: 0 } },
+    orderBy: { averageRating: "desc" },
+    take: limit,
+    select: { id: true, name: true, slug: true, thumbnail: true, averageRating: true, reviewCount: true },
   });
 }
 
@@ -257,6 +277,7 @@ export function createProduct(data: ProductInput) {
       weight: data.weight ?? null,
       dimensions: data.dimensions || null,
       thumbnail: data.thumbnail,
+      thumbnailPublicId: data.thumbnailPublicId || null,
       isFeatured: data.isFeatured ?? false,
       isBestSeller: data.isBestSeller ?? false,
       isNewArrival: data.isNewArrival ?? false,
@@ -270,8 +291,13 @@ export function createProduct(data: ProductInput) {
   });
 }
 
-export function updateProduct(id: string, data: UpdateProductInput) {
-  return prisma.product.update({
+export async function updateProduct(id: string, data: UpdateProductInput) {
+  // Always fetched (cheap, single row): needed both to clean up an outgoing
+  // Cloudinary thumbnail asset on replace, and to detect a 0 -> positive
+  // stock transition so wishlisters can be notified of a restock below.
+  const previous = await prisma.product.findUnique({ where: { id }, select: { thumbnailPublicId: true, stock: true } });
+
+  const updated = await prisma.product.update({
     where: { id },
     data: {
       ...(data.categoryId !== undefined && { categoryId: data.categoryId }),
@@ -288,6 +314,7 @@ export function updateProduct(id: string, data: UpdateProductInput) {
       ...(data.weight !== undefined && { weight: data.weight }),
       ...(data.dimensions !== undefined && { dimensions: data.dimensions || null }),
       ...(data.thumbnail !== undefined && { thumbnail: data.thumbnail }),
+      ...(data.thumbnailPublicId !== undefined && { thumbnailPublicId: data.thumbnailPublicId || null }),
       ...(data.isFeatured !== undefined && { isFeatured: data.isFeatured }),
       ...(data.isBestSeller !== undefined && { isBestSeller: data.isBestSeller }),
       ...(data.isNewArrival !== undefined && { isNewArrival: data.isNewArrival }),
@@ -299,29 +326,86 @@ export function updateProduct(id: string, data: UpdateProductInput) {
     },
     include: publicProductInclude,
   });
+
+  if (previous?.thumbnailPublicId && previous.thumbnailPublicId !== data.thumbnailPublicId) {
+    await destroyCloudinaryAsset(previous.thumbnailPublicId);
+  }
+
+  // Best-effort — never fail the product update over a notification hiccup.
+  if (previous && previous.stock <= 0 && updated.stock > 0) {
+    await notifyWishlistersOfRestock(updated.id, updated.name, updated.slug).catch(() => null);
+  }
+
+  return updated;
 }
 
-export function deleteProduct(id: string) {
-  return prisma.product.delete({ where: { id } });
+export async function deleteProduct(id: string) {
+  const product = await prisma.product.findUnique({
+    where: { id },
+    select: { thumbnailPublicId: true, images: { select: { publicId: true } } },
+  });
+
+  const deleted = await prisma.product.delete({ where: { id } });
+
+  const publicIds = [product?.thumbnailPublicId, ...(product?.images.map((image) => image.publicId) ?? [])].filter(
+    (value): value is string => !!value
+  );
+  await Promise.all(publicIds.map((publicId) => destroyCloudinaryAsset(publicId)));
+
+  return deleted;
 }
 
 // --- Product images --------------------------------------------------------
 
 export async function addProductImage(productId: string, data: ProductImageInput) {
-  const displayOrder =
-    data.displayOrder ?? (await prisma.productImage.count({ where: { productId } }));
+  return prisma.$transaction(async (tx) => {
+    // Lock the parent product row so concurrent uploads for the same
+    // product — e.g. a multi-file drag-and-drop batch, which fires several
+    // uploads in parallel — can't all read the same "current count" and
+    // collide on the same displayOrder (a plain COUNT here would race).
+    await tx.product.update({ where: { id: productId }, data: { updatedAt: new Date() } });
 
-  return prisma.productImage.create({
-    data: { productId, imageUrl: data.imageUrl, displayOrder },
+    let displayOrder = data.displayOrder;
+    if (displayOrder === undefined) {
+      const last = await tx.productImage.findFirst({ where: { productId }, orderBy: { displayOrder: "desc" } });
+      displayOrder = last ? last.displayOrder + 1 : 0;
+    }
+
+    return tx.productImage.create({
+      data: { productId, imageUrl: data.imageUrl, publicId: data.publicId || null, displayOrder },
+    });
   });
 }
 
-export function updateProductImage(id: string, data: UpdateProductImageInput) {
-  return prisma.productImage.update({ where: { id }, data: { displayOrder: data.displayOrder } });
+export async function updateProductImage(id: string, data: UpdateProductImageInput) {
+  // Replacing the image itself (not just reordering) — clean up the
+  // outgoing Cloudinary asset once the swap has committed.
+  const previous =
+    data.imageUrl !== undefined ? await prisma.productImage.findUnique({ where: { id }, select: { publicId: true } }) : null;
+
+  const updated = await prisma.productImage.update({
+    where: { id },
+    data: {
+      ...(data.displayOrder !== undefined && { displayOrder: data.displayOrder }),
+      ...(data.imageUrl !== undefined && { imageUrl: data.imageUrl }),
+      ...(data.publicId !== undefined && { publicId: data.publicId || null }),
+    },
+  });
+
+  if (previous?.publicId && previous.publicId !== data.publicId) {
+    await destroyCloudinaryAsset(previous.publicId);
+  }
+
+  return updated;
 }
 
-export function deleteProductImage(id: string) {
-  return prisma.productImage.delete({ where: { id } });
+export async function deleteProductImage(id: string) {
+  const image = await prisma.productImage.findUnique({ where: { id }, select: { publicId: true } });
+  const deleted = await prisma.productImage.delete({ where: { id } });
+
+  if (image?.publicId) await destroyCloudinaryAsset(image.publicId);
+
+  return deleted;
 }
 
 // --- Product variants --------------------------------------------------------

@@ -50,11 +50,18 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className="flex size-10 items-center justify-center rounded-full bg-blush font-heading text-sm font-semibold text-text-primary outline-none transition-transform duration-[250ms] hover:scale-105"
+        className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-blush font-heading text-sm font-semibold text-text-primary outline-none transition-transform duration-[250ms] hover:scale-105"
         aria-label="Account menu"
       >
-        {profile.firstName[0]}
-        {profile.lastName[0]}
+        {profile.avatar ? (
+          // eslint-disable-next-line @next/next/no-img-element -- Cloudinary URL, not registered in next/image remotePatterns
+          <img src={profile.avatar} alt="" className="size-full object-cover" />
+        ) : (
+          <>
+            {profile.firstName[0]}
+            {profile.lastName[0]}
+          </>
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-56">
         <div className="px-2.5 py-2">

@@ -28,6 +28,7 @@ import { UserRole } from "@/constants/roles";
 import { ROUTES } from "@/constants/routes";
 import { siteConfig } from "@/constants/config";
 import { UserMenu } from "@/features/auth/components/UserMenu";
+import { NotificationBell } from "@/features/notifications/components/NotificationBell";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
 import type { ICategory } from "@/types/product";
@@ -137,6 +138,7 @@ export function Navbar({ categories }: { categories: ICategory[] }) {
               </span>
             )}
           </Button>
+          {profile && <NotificationBell />}
           <UserMenu />
 
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>

@@ -13,6 +13,7 @@ interface WishlistState {
   isLoading: boolean;
   hydrate: (isAuthenticated: boolean) => Promise<void>;
   toggle: (productId: string, variantId?: string) => Promise<{ success: boolean; message: string }>;
+  clearAll: () => Promise<{ success: boolean; message: string }>;
   isWishlisted: (productId: string) => boolean;
 }
 
@@ -82,6 +83,21 @@ export const useWishlistStore = create<WishlistState>((set, get) => ({
       const items: IWishlistItemWithProduct[] = json.data?.items ?? [];
       set({ items, productIds: toProductIdSet(items) });
       return { success: true, message: "Added to wishlist." };
+    } catch {
+      return { success: false, message: NETWORK_ERROR_MESSAGE };
+    }
+  },
+
+  clearAll: async () => {
+    try {
+      const response = await fetch("/api/wishlist", { method: "DELETE" });
+      const json = await response.json();
+      if (!response.ok) {
+        return { success: false, message: json.message ?? "Could not clear wishlist." };
+      }
+
+      set({ items: [], productIds: new Set() });
+      return { success: true, message: "Wishlist cleared." };
     } catch {
       return { success: false, message: NETWORK_ERROR_MESSAGE };
     }

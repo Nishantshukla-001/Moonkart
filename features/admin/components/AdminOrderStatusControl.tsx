@@ -6,17 +6,10 @@ import { toast } from "sonner";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { adminOrderService } from "@/features/admin/services/adminOrder.service";
-import type { OrderStatusValue } from "@/features/orders/validation/order.schema";
+import { ORDER_STATUS_LABELS } from "@/features/orders/components/OrderStatusBadge";
+import { orderStatusSchema, type OrderStatusValue } from "@/features/orders/validation/order.schema";
 
-const STATUS_OPTIONS: OrderStatusValue[] = [
-  "PENDING",
-  "CONFIRMED",
-  "PROCESSING",
-  "PACKED",
-  "SHIPPED",
-  "DELIVERED",
-  "CANCELLED",
-];
+const STATUS_OPTIONS = orderStatusSchema.options;
 
 export function AdminOrderStatusControl({ orderId, status }: { orderId: string; status: OrderStatusValue }) {
   const router = useRouter();
@@ -43,7 +36,7 @@ export function AdminOrderStatusControl({ orderId, status }: { orderId: string; 
       <SelectContent>
         {STATUS_OPTIONS.map((option) => (
           <SelectItem key={option} value={option}>
-            {option.charAt(0) + option.slice(1).toLowerCase()}
+            {ORDER_STATUS_LABELS[option]}
           </SelectItem>
         ))}
       </SelectContent>

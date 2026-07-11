@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ROUTES } from "@/constants/routes";
 import { siteConfig } from "@/constants/config";
 import { adminProductService } from "@/features/admin/services/adminProduct.service";
+import { CloudinaryUploader, type CloudinaryUploadResult } from "@/components/shared/CloudinaryUploader";
 import { ImagesManager } from "@/features/admin/components/ImagesManager";
 import { VariantsManager } from "@/features/admin/components/VariantsManager";
 import { productSchema, type ProductInput } from "@/features/products/validation/product.schema";
@@ -49,6 +50,7 @@ function toDefaults(product?: IProductWithRelations | null): ProductInput {
       weight: undefined,
       dimensions: "",
       thumbnail: "",
+      thumbnailPublicId: "",
       isFeatured: false,
       isBestSeller: false,
       isNewArrival: false,
@@ -75,6 +77,7 @@ function toDefaults(product?: IProductWithRelations | null): ProductInput {
     weight: product.weight ?? undefined,
     dimensions: product.dimensions ?? "",
     thumbnail: product.thumbnail,
+    thumbnailPublicId: product.thumbnailPublicId ?? "",
     isFeatured: product.isFeatured,
     isBestSeller: product.isBestSeller,
     isNewArrival: product.isNewArrival,
@@ -313,20 +316,35 @@ export function ProductForm({ product, categories, brands }: ProductFormProps) {
               <FormField
                 control={form.control}
                 name="thumbnail"
-                render={({ field }) => (
+                render={() => (
                   <FormItem>
-                    <FormLabel>Thumbnail URL</FormLabel>
-                    <div className="flex items-start gap-3">
-                      <FormControl>
-                        <Input placeholder="https://…" {...field} />
-                      </FormControl>
-                      {thumbnail && (
-                        <div className="size-11 shrink-0 overflow-hidden rounded-lg border border-border-light bg-bg-section">
-                          {/* eslint-disable-next-line @next/next/no-img-element -- admin-entered arbitrary URL */}
+                    <FormLabel>Thumbnail</FormLabel>
+                    {thumbnail ? (
+                      <div className="flex items-start gap-3">
+                        <div className="size-20 shrink-0 overflow-hidden rounded-lg border border-border-light bg-bg-section">
+                          {/* eslint-disable-next-line @next/next/no-img-element -- previews both Cloudinary and legacy URLs */}
                           <img src={thumbnail} alt="" className="size-full object-cover" />
                         </div>
-                      )}
-                    </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            form.setValue("thumbnail", "", { shouldValidate: true });
+                            form.setValue("thumbnailPublicId", "");
+                          }}
+                        >
+                          Change Thumbnail
+                        </Button>
+                      </div>
+                    ) : (
+                      <CloudinaryUploader
+                        onUploaded={(result: CloudinaryUploadResult) => {
+                          form.setValue("thumbnail", result.url, { shouldValidate: true });
+                          form.setValue("thumbnailPublicId", result.publicId);
+                        }}
+                      />
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}

@@ -12,6 +12,7 @@ export interface IWishlistItemWithProduct extends IWishlistItem {
     price: number;
     salePrice: number | null;
     averageRating: number;
+    stock: number;
     images: { imageUrl: string }[];
   };
   variant: ProductVariant | null;

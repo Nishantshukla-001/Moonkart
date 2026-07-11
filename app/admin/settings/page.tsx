@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
-import { Globe, Mail, Store } from "lucide-react";
 
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { siteConfig } from "@/constants/config";
+import { AnnouncementForm } from "@/features/admin/components/AnnouncementForm";
+import { StoreSettingsForm } from "@/features/admin/components/StoreSettingsForm";
+import { getStoreSettings } from "@/features/admin/services/storeSettings.service";
 import { ProfileForm } from "@/features/auth/components/ProfileForm";
 import { requireAdmin } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Settings" };
 
 export default async function AdminSettingsPage() {
-  const user = await requireAdmin();
+  const [user, storeSettings] = await Promise.all([requireAdmin(), getStoreSettings()]);
 
   return (
     <>
@@ -33,34 +34,26 @@ export default async function AdminSettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Store Information</CardTitle>
-            <CardDescription>Configured in the app&apos;s environment — read only.</CardDescription>
+            <CardTitle>Send Announcement</CardTitle>
+            <CardDescription>Notify every customer via their in-app notification center.</CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <div className="flex items-start gap-3">
-              <Store className="mt-0.5 size-4 shrink-0 text-text-muted" aria-hidden="true" />
-              <div>
-                <p className="text-sm font-medium text-text-primary">{siteConfig.name}</p>
-                <p className="text-xs text-text-muted">Store name</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <Globe className="mt-0.5 size-4 shrink-0 text-text-muted" aria-hidden="true" />
-              <div>
-                <p className="text-sm font-medium text-text-primary break-all">{siteConfig.url}</p>
-                <p className="text-xs text-text-muted">Site URL</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <Mail className="mt-0.5 size-4 shrink-0 text-text-muted" aria-hidden="true" />
-              <div>
-                <p className="text-sm font-medium text-text-primary break-all">{user.email}</p>
-                <p className="text-xs text-text-muted">Admin contact email</p>
-              </div>
-            </div>
+          <CardContent>
+            <AnnouncementForm />
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Store Settings</CardTitle>
+          <CardDescription>
+            General store, branding, contact, social, currency, and shipping/tax placeholders.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <StoreSettingsForm settings={storeSettings} />
+        </CardContent>
+      </Card>
     </>
   );
 }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { Container } from "@/components/layout/Container";
 import { Card } from "@/components/ui/card";
+import { AvatarUploadForm } from "@/features/auth/components/AvatarUploadForm";
 import { ChangePasswordForm } from "@/features/auth/components/ChangePasswordForm";
 import { ProfileForm } from "@/features/auth/components/ProfileForm";
 import { requireUser } from "@/lib/auth";
@@ -26,6 +27,13 @@ export default async function ProfilePage() {
       </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <Card className="p-6 sm:p-8">
+          <h2 className="mb-6 font-heading text-xl font-semibold text-text-primary">
+            Profile Photo
+          </h2>
+          <AvatarUploadForm user={user} />
+        </Card>
+
         <Card className="p-6 sm:p-8">
           <h2 className="mb-6 font-heading text-xl font-semibold text-text-primary">
             Personal Information

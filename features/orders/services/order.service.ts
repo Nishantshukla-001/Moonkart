@@ -2,6 +2,10 @@ import "server-only";
 
 import type { Prisma } from "@prisma/client";
 
+import {
+  createNotification,
+  createReviewRemindersForOrder,
+} from "@/features/notifications/services/notification.service";
 import { prisma } from "@/lib/prisma";
 import type { AdminOrderQuery, OrderStatusValue } from "@/features/orders/validation/order.schema";
 
@@ -212,6 +216,16 @@ export async function placeOrder(userId: string, addressId: string): Promise<Pla
     });
 
     const order = await getOrderById(userId, orderId);
+
+    // Best-effort — a notification failure should never fail a successful order.
+    await createNotification(
+      userId,
+      "ORDER_STATUS",
+      "Order placed!",
+      `Your order ${order!.orderNumber} has been placed and is being processed.`,
+      `/orders/${order!.id}`
+    ).catch(() => null);
+
     return { success: true, order: order! };
   } catch (error) {
     if (error instanceof CheckoutError) {
@@ -297,8 +311,35 @@ export function getOrderByIdAdmin(id: string) {
   return prisma.order.findUnique({ where: { id }, include: orderInclude });
 }
 
-export function updateOrderStatus(id: string, status: OrderStatusValue) {
-  return prisma.order.update({ where: { id }, data: { status }, include: orderInclude });
+const STATUS_MESSAGES: Record<OrderStatusValue, string> = {
+  PENDING: "is pending confirmation.",
+  CONFIRMED: "has been confirmed.",
+  PROCESSING: "is being processed.",
+  PACKED: "has been packed and is ready to ship.",
+  SHIPPED: "has shipped!",
+  OUT_FOR_DELIVERY: "is out for delivery!",
+  DELIVERED: "has been delivered. We hope you love it!",
+  CANCELLED: "has been cancelled.",
+  REFUNDED: "has been refunded.",
+};
+
+export async function updateOrderStatus(id: string, status: OrderStatusValue) {
+  const order = await prisma.order.update({ where: { id }, data: { status }, include: orderInclude });
+
+  // Best-effort — a notification/reminder failure should never fail the status update itself.
+  await createNotification(
+    order.userId,
+    "ORDER_STATUS",
+    `Order ${order.orderNumber} update`,
+    `Your order ${order.orderNumber} ${STATUS_MESSAGES[status]}`,
+    `/orders/${order.id}`
+  ).catch(() => null);
+
+  if (status === "DELIVERED") {
+    await createReviewRemindersForOrder(order.id).catch(() => null);
+  }
+
+  return order;
 }
 
 export function getOrderCountsByStatus() {

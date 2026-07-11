@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { Container } from "@/components/layout/Container";
+import { siteConfig } from "@/constants/config";
 import { getCategoryBySlug } from "@/features/categories/services/category.service";
 import { ProductListingResults } from "@/features/products/components/ProductListingResults";
 import { productQuerySchema } from "@/features/products/validation/productQuery.schema";
@@ -16,10 +17,18 @@ interface CategoryPageProps {
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
   const { slug } = await params;
   const category = await getCategoryBySlug(slug);
+  if (!category) return { title: "Category" };
+
+  const title = category.name;
+  const description = category.description ?? `Shop ${category.name} at ${siteConfig.name}.`;
+  const url = `${siteConfig.url}/categories/${category.slug}`;
 
   return {
-    title: category ? category.name : "Category",
-    description: category?.description ?? "Browse this MoonKart category.",
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: { type: "website", title, description, url, ...(category.image && { images: [{ url: category.image }] }) },
+    twitter: { card: "summary_large_image", title, description, ...(category.image && { images: [category.image] }) },
   };
 }
 
@@ -33,8 +42,19 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   const query = productQuerySchema.parse({ ...rawParams, category: slug });
   const basePath = `/categories/${slug}`;
 
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: siteConfig.url },
+      { "@type": "ListItem", position: 2, name: "Categories", item: `${siteConfig.url}/categories` },
+      { "@type": "ListItem", position: 3, name: category.name },
+    ],
+  };
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <Container className="pt-8">
         <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "Categories", href: "/categories" }, { label: category.name }]} />
         <h1 className="mt-4 text-3xl font-bold tracking-tight text-text-primary sm:text-[32px]">

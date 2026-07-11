@@ -21,6 +21,7 @@ export const productSchema = z
     weight: z.number().positive("Weight must be greater than 0").optional(),
     dimensions: z.string().trim().max(100, "Must be under 100 characters").optional().or(z.literal("")),
     thumbnail: z.url("Enter a valid thumbnail URL"),
+    thumbnailPublicId: z.string().trim().max(300).optional(),
     isFeatured: z.boolean().optional(),
     isBestSeller: z.boolean().optional(),
     isNewArrival: z.boolean().optional(),
@@ -64,6 +65,7 @@ export const updateProductSchema = z
     weight: z.number().positive().nullable().optional(),
     dimensions: z.string().trim().max(100).optional().or(z.literal("")),
     thumbnail: z.url("Enter a valid thumbnail URL").optional(),
+    thumbnailPublicId: z.string().trim().max(300).optional(),
     isFeatured: z.boolean().optional(),
     isBestSeller: z.boolean().optional(),
     isNewArrival: z.boolean().optional(),
@@ -87,13 +89,16 @@ export type UpdateProductInput = z.infer<typeof updateProductSchema>;
 
 export const productImageSchema = z.object({
   imageUrl: z.url("Enter a valid image URL"),
+  publicId: z.string().trim().max(300).optional(),
   displayOrder: z.number().int().min(0).optional(),
 });
 
 export type ProductImageInput = z.infer<typeof productImageSchema>;
 
 export const updateProductImageSchema = z.object({
-  displayOrder: z.number().int().min(0),
+  displayOrder: z.number().int().min(0).optional(),
+  imageUrl: z.url("Enter a valid image URL").optional(),
+  publicId: z.string().trim().max(300).optional(),
 });
 
 export type UpdateProductImageInput = z.infer<typeof updateProductImageSchema>;

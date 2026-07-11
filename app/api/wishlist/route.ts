@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 
-import { addWishlistItem, getOrCreateWishlist } from "@/features/wishlist/services/wishlist.service";
+import { addWishlistItem, clearWishlist, getOrCreateWishlist } from "@/features/wishlist/services/wishlist.service";
 import { wishlistItemInputSchema } from "@/features/wishlist/validation/wishlist.schema";
 import { getCurrentUser } from "@/lib/auth";
 import { apiError, apiSuccess } from "@/lib/apiResponse";
@@ -11,6 +11,16 @@ export async function GET() {
 
   const wishlist = await getOrCreateWishlist(user.id);
   return apiSuccess(wishlist, "Wishlist fetched.");
+}
+
+export async function DELETE() {
+  const user = await getCurrentUser();
+  if (!user) return apiError("Not authenticated.", [], 401);
+
+  const wishlist = await clearWishlist(user.id);
+  if (!wishlist) return apiError("Wishlist not found.", [], 404);
+
+  return apiSuccess(wishlist, "Wishlist cleared.");
 }
 
 export async function POST(request: NextRequest) {

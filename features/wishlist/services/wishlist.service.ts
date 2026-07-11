@@ -14,6 +14,10 @@ const wishlistInclude = {
   },
 };
 
+export function getWishlistCount(userId: string) {
+  return prisma.wishlistItem.count({ where: { wishlist: { userId } } });
+}
+
 export async function getOrCreateWishlist(userId: string) {
   // upsert (not findUnique-then-create) so two concurrent calls for a
   // brand-new user (e.g. a page-load hydrate racing a hydrate-and-toggle
@@ -67,6 +71,15 @@ export async function removeWishlistItemByProduct(userId: string, productId: str
   } catch {
     return null;
   }
+
+  return getOrCreateWishlist(userId);
+}
+
+export async function clearWishlist(userId: string) {
+  const wishlist = await prisma.wishlist.findUnique({ where: { userId } });
+  if (!wishlist) return null;
+
+  await prisma.wishlistItem.deleteMany({ where: { wishlistId: wishlist.id } });
 
   return getOrCreateWishlist(userId);
 }

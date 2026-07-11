@@ -10,6 +10,13 @@ import { getProductBySlug, getRelatedProducts } from "@/features/products/servic
 import { ProductCardConnected } from "@/features/products/components/ProductCardConnected";
 import { ProductGallery } from "@/features/products/components/ProductGallery";
 import { ProductPurchasePanel } from "@/features/products/components/ProductPurchasePanel";
+import { RecentlyViewedSection } from "@/features/products/components/RecentlyViewedSection";
+import { StickyAddToCartBar } from "@/features/products/components/StickyAddToCartBar";
+import { TrackRecentlyViewed } from "@/features/products/components/TrackRecentlyViewed";
+import { ReviewsSection } from "@/features/reviews/components/ReviewsSection";
+import { getRatingBreakdown } from "@/features/reviews/services/review.service";
+import { getEffectivePrice } from "@/features/products/utils";
+import { siteConfig } from "@/constants/config";
 import { calculateDiscountPercent } from "@/utils/calculateDiscount";
 import { formatCurrency } from "@/utils/formatCurrency";
 
@@ -20,10 +27,29 @@ interface ProductPageProps {
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
+  if (!product) return { title: "Product" };
+
+  const title = product.metaTitle || product.name;
+  const description = product.metaDescription || product.shortDescription || "Shop this product on MoonKart.";
+  const image = product.images[0]?.imageUrl ?? product.thumbnail;
 
   return {
-    title: product ? (product.metaTitle || product.name) : "Product",
-    description: product?.metaDescription || product?.shortDescription || "Shop this product on MoonKart.",
+    title,
+    description,
+    alternates: { canonical: `${siteConfig.url}/products/${product.slug}` },
+    openGraph: {
+      type: "website",
+      title,
+      description,
+      url: `${siteConfig.url}/products/${product.slug}`,
+      images: [{ url: image }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [image],
+    },
   };
 }
 
@@ -33,24 +59,71 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   if (!product) notFound();
 
-  const related = await getRelatedProducts(product.id, product.categoryId);
+  const [related, ratingBreakdown] = await Promise.all([
+    getRelatedProducts(product.id, product.categoryId),
+    getRatingBreakdown(product.id),
+  ]);
   const effectivePrice = product.salePrice ?? product.price;
   const discountPercent = product.salePrice
     ? calculateDiscountPercent(product.price, product.salePrice)
     : 0;
   const images = [product.thumbnail, ...product.images.map((image) => image.imageUrl)];
 
+  const breadcrumbItems = [
+    { label: "Home", href: "/" },
+    { label: "Products", href: "/products" },
+    { label: product.category.name, href: `/categories/${product.category.slug}` },
+    { label: product.name },
+  ];
+
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description: product.shortDescription || product.metaDescription || undefined,
+    image: images,
+    sku: product.sku || undefined,
+    brand: product.brand ? { "@type": "Brand", name: product.brand.name } : undefined,
+    offers: {
+      "@type": "Offer",
+      url: `${siteConfig.url}/products/${product.slug}`,
+      priceCurrency: "INR",
+      price: getEffectivePrice(product),
+      availability: product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+    },
+    ...(product.averageRating > 0 && {
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: product.averageRating,
+        reviewCount: product.reviewCount,
+      },
+    }),
+  };
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: breadcrumbItems.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.label,
+      item: item.href ? `${siteConfig.url}${item.href}` : undefined,
+    })),
+  };
+
   return (
     <>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+    <TrackRecentlyViewed
+      productId={product.id}
+      name={product.name}
+      slug={product.slug}
+      image={product.thumbnail}
+      price={effectivePrice}
+    />
     <Container className="flex flex-col gap-10 py-8 sm:py-10">
-      <Breadcrumb
-        items={[
-          { label: "Home", href: "/" },
-          { label: "Products", href: "/products" },
-          { label: product.category.name, href: `/categories/${product.category.slug}` },
-          { label: product.name },
-        ]}
-      />
+      <Breadcrumb items={breadcrumbItems} />
 
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
         <ProductGallery images={images} name={product.name} />
@@ -99,7 +172,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
             <p className="text-base leading-[160%] text-text-secondary">{product.shortDescription}</p>
           )}
 
-          <ProductPurchasePanel product={product} />
+          <div id="product-purchase-panel">
+            <ProductPurchasePanel product={product} />
+          </div>
 
           <dl className="grid grid-cols-2 gap-3 border-t border-divider pt-5 text-sm">
             <div>
@@ -141,6 +216,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
         </div>
       )}
 
+      <div className="max-w-3xl border-t border-divider pt-8">
+        <ReviewsSection productSlug={product.slug} initialBreakdown={ratingBreakdown} />
+      </div>
+
     </Container>
 
     {related.length > 0 && (
@@ -155,6 +234,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
         ))}
       </Carousel>
     )}
+
+    <RecentlyViewedSection excludeSlug={product.slug} background="white" />
+
+    <StickyAddToCartBar product={product} />
     </>
   );
 }

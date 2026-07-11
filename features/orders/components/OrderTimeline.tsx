@@ -9,6 +9,7 @@ const STEPS: { status: OrderStatusValue; label: string }[] = [
   { status: "PROCESSING", label: "Processing" },
   { status: "PACKED", label: "Packed" },
   { status: "SHIPPED", label: "Shipped" },
+  { status: "OUT_FOR_DELIVERY", label: "Out for Delivery" },
   { status: "DELIVERED", label: "Delivered" },
 ];
 
@@ -20,6 +21,17 @@ export function OrderTimeline({ status }: { status: OrderStatusValue }) {
           <X className="size-4 text-danger" aria-hidden="true" />
         </div>
         <p className="text-sm font-medium text-danger">This order was cancelled.</p>
+      </div>
+    );
+  }
+
+  if (status === "REFUNDED") {
+    return (
+      <div className="flex items-center gap-3 rounded-lg bg-text-muted/10 px-4 py-3">
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-text-muted/20">
+          <Check className="size-4 text-text-secondary" aria-hidden="true" />
+        </div>
+        <p className="text-sm font-medium text-text-secondary">This order was refunded.</p>
       </div>
     );
   }

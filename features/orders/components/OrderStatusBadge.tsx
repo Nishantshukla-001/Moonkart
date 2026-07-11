@@ -8,24 +8,28 @@ const statusStyles: Record<OrderStatusValue, string> = {
   PROCESSING: "bg-blush-light text-blush-hover",
   PACKED: "bg-sage-light text-sage-hover",
   SHIPPED: "bg-sage-light text-sage-hover",
+  OUT_FOR_DELIVERY: "bg-sage-light text-sage-hover",
   DELIVERED: "bg-success/15 text-success",
   CANCELLED: "bg-danger/15 text-danger",
+  REFUNDED: "bg-text-muted/15 text-text-secondary",
 };
 
-const statusLabels: Record<OrderStatusValue, string> = {
+export const ORDER_STATUS_LABELS: Record<OrderStatusValue, string> = {
   PENDING: "Pending",
   CONFIRMED: "Confirmed",
   PROCESSING: "Processing",
   PACKED: "Packed",
   SHIPPED: "Shipped",
+  OUT_FOR_DELIVERY: "Out for Delivery",
   DELIVERED: "Delivered",
   CANCELLED: "Cancelled",
+  REFUNDED: "Refunded",
 };
 
 export function OrderStatusBadge({ status }: { status: OrderStatusValue }) {
   return (
     <Badge variant="outline" className={cn("border-transparent", statusStyles[status])}>
-      {statusLabels[status]}
+      {ORDER_STATUS_LABELS[status]}
     </Badge>
   );
 }

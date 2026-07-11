@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowDown, ArrowUp, ImagePlus, Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ImagePlus, Plus, Repeat, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
 import { Button } from "@/components/ui/button";
 import { adminProductService } from "@/features/admin/services/adminProduct.service";
 import { ImageFormDialog } from "@/features/admin/components/ImageFormDialog";
+import { ReplaceImageDialog } from "@/features/admin/components/ReplaceImageDialog";
 import type { IProductImage } from "@/types/product";
 
 function sortByDisplayOrder(images: IProductImage[]) {
@@ -23,10 +24,15 @@ export function ImagesManager({
 }) {
   const [images, setImages] = useState(() => sortByDisplayOrder(initialImages));
   const [formOpen, setFormOpen] = useState(false);
+  const [replacing, setReplacing] = useState<IProductImage | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
 
   function handleAdded(image: IProductImage) {
     setImages((prev) => sortByDisplayOrder([...prev, image]));
+  }
+
+  function handleReplaced(image: IProductImage) {
+    setImages((prev) => sortByDisplayOrder(prev.map((item) => (item.id === image.id ? image : item))));
   }
 
   async function handleRemove(image: IProductImage) {
@@ -83,7 +89,7 @@ export function ImagesManager({
           The first image is used as the primary gallery image. Reorder with the arrows.
         </p>
         <Button type="button" size="sm" onClick={() => setFormOpen(true)}>
-          <Plus /> Add Image
+          <Plus /> Add Images
         </Button>
       </div>
 
@@ -129,6 +135,15 @@ export function ImagesManager({
                   type="button"
                   variant="ghost"
                   size="icon-xs"
+                  aria-label="Replace image"
+                  onClick={() => setReplacing(image)}
+                >
+                  <Repeat className="size-3.5" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
                   aria-label="Remove image"
                   disabled={removingId === image.id}
                   onClick={() => handleRemove(image)}
@@ -142,6 +157,13 @@ export function ImagesManager({
       )}
 
       <ImageFormDialog open={formOpen} onOpenChange={setFormOpen} productId={productId} onSaved={handleAdded} />
+      <ReplaceImageDialog
+        open={!!replacing}
+        onOpenChange={(open) => !open && setReplacing(null)}
+        productId={productId}
+        image={replacing}
+        onSaved={handleReplaced}
+      />
     </div>
   );
 }
