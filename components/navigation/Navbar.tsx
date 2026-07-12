@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Heart, LogOut, Menu, ShieldCheck, ShoppingBag, User } from "lucide-react";
+import { ChevronDown, Heart, LogOut, Menu, Search, ShieldCheck, ShoppingBag, User, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -29,17 +29,27 @@ import { ROUTES } from "@/constants/routes";
 import { siteConfig } from "@/constants/config";
 import { UserMenu } from "@/features/auth/components/UserMenu";
 import { NotificationBell } from "@/features/notifications/components/NotificationBell";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
 import type { ICategory } from "@/types/product";
 
+/** Simple link items in the centered nav — label + destination, same route constants used everywhere else. */
 const primaryNavLinks = [
   { label: "Home", href: ROUTES.home },
-  { label: "Products", href: ROUTES.products },
+  { label: "All Products", href: ROUTES.products },
+  { label: "About Us", href: ROUTES.about },
+  { label: "Return & Refund Policy", href: ROUTES.returnPolicy },
+  { label: "Contact Us", href: ROUTES.contact },
 ];
+
+/** Soft, understated hover — a thin underline eases in under the label instead of a hard color snap. */
+const navLinkClass =
+  "relative whitespace-nowrap font-heading text-sm font-medium tracking-[0.3px] text-text-primary transition-colors duration-300 after:absolute after:-bottom-1.5 after:left-0 after:h-px after:w-0 after:bg-blush-hover after:transition-all after:duration-300 hover:text-blush-hover hover:after:w-full";
 
 export function Navbar({ categories }: { categories: ICategory[] }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const { profile, signOut } = useAuth();
   const itemCount = useCart((state) => state.itemCount);
   const setDrawerOpen = useCart((state) => state.setDrawerOpen);
@@ -54,48 +64,45 @@ export function Navbar({ categories }: { categories: ICategory[] }) {
   function handleSearch(query: string) {
     if (!query) return;
     setMobileOpen(false);
+    setSearchOpen(false);
     router.push(`${ROUTES.search}?q=${encodeURIComponent(query)}`);
   }
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border-light/80 bg-background/85 shadow-soft backdrop-blur-md">
-      <Container className="flex h-20 items-center gap-4 py-3">
+    <header className="sticky top-0 z-40 w-full border-b border-border-light/70 bg-background/90 shadow-soft backdrop-blur-md">
+      <Container className="relative flex h-24 items-center justify-between gap-4 py-3 lg:px-8 xl:px-10">
+        {/* Logo — left, generously spaced from everything else. */}
         <Link
           href={ROUTES.home}
-          className="flex shrink-0 items-center gap-2"
+          className="flex shrink-0 items-center gap-3"
           aria-label={`${siteConfig.name} home`}
         >
           <Image
             src={logo}
             alt={siteConfig.name}
-            width={44}
-            height={44}
+            width={36}
+            height={36}
             className="rounded-full object-cover shadow-soft"
             priority
           />
-          {/* Hidden below 400px — logo mark + 4 icon buttons (wishlist/cart/
-              account/menu) don't fit alongside the full wordmark at the
-              smallest supported widths (320–390px). */}
-          <span className="hidden font-heading text-xl font-bold text-text-primary min-[400px]:inline">
+          {/* Hidden below 400px — logo mark + icon cluster don't fit alongside
+              the full wordmark at the smallest supported widths (320–390px). */}
+          <span className="hidden font-heading text-lg font-bold tracking-[0.2px] text-text-primary min-[400px]:inline">
             {siteConfig.name}
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-6 lg:flex">
-          {primaryNavLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="font-heading text-base font-medium tracking-[0.2px] text-text-primary transition-colors duration-[250ms] hover:text-blush-hover"
-            >
-              {link.label}
-            </Link>
-          ))}
+        {/* Centered nav — absolutely positioned so it stays truly centered on
+            the header regardless of how wide the logo or icon cluster are. */}
+        <nav className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-8 xl:flex">
+          <Link href={primaryNavLinks[0].href} className={navLinkClass}>
+            {primaryNavLinks[0].label}
+          </Link>
 
           <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-1 font-heading text-base font-medium tracking-[0.2px] text-text-primary outline-none transition-colors duration-[250ms] hover:text-blush-hover">
-              Categories
-              <ChevronDown className="size-4" />
+            <DropdownMenuTrigger className={cn(navLinkClass, "flex items-center gap-1 outline-none")}>
+              Explore
+              <ChevronDown className="size-3.5" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="min-w-56">
               {categories.map((category) => (
@@ -108,16 +115,30 @@ export function Navbar({ categories }: { categories: ICategory[] }) {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {primaryNavLinks.slice(1).map((link) => (
+            <Link key={link.href} href={link.href} className={navLinkClass}>
+              {link.label}
+            </Link>
+          ))}
         </nav>
 
-        <div className="hidden flex-1 md:block">
-          <SearchBar className="max-w-md" onSearch={handleSearch} />
-        </div>
-
-        <div className="ml-auto flex items-center gap-1">
+        {/* Icon cluster — far right, small and unobtrusive. */}
+        <div className="ml-auto flex items-center gap-0.5">
           <Button
             variant="ghost"
-            size="icon"
+            size="icon-sm"
+            aria-label={searchOpen ? "Close search" : "Search"}
+            aria-expanded={searchOpen}
+            className="hover:text-blush-hover"
+            onClick={() => setSearchOpen((open) => !open)}
+          >
+            {searchOpen ? <X /> : <Search />}
+          </Button>
+          <UserMenu />
+          <Button
+            variant="ghost"
+            size="icon-sm"
             aria-label="Wishlist"
             className="hover:text-blush"
             render={<Link href={ROUTES.wishlist} />}
@@ -126,7 +147,7 @@ export function Navbar({ categories }: { categories: ICategory[] }) {
           </Button>
           <Button
             variant="ghost"
-            size="icon"
+            size="icon-sm"
             aria-label={`Cart${itemCount > 0 ? ` (${itemCount} items)` : ""}`}
             className="relative hover:text-blush-hover"
             onClick={() => setDrawerOpen(true)}
@@ -139,12 +160,11 @@ export function Navbar({ categories }: { categories: ICategory[] }) {
             )}
           </Button>
           {profile && <NotificationBell />}
-          <UserMenu />
 
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger
               render={
-                <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open menu" />
+                <Button variant="ghost" size="icon-sm" className="xl:hidden" aria-label="Open menu" />
               }
             >
               <Menu />
@@ -167,7 +187,7 @@ export function Navbar({ categories }: { categories: ICategory[] }) {
                     </Link>
                   ))}
                   <span className="px-3 pt-3 pb-1 text-xs font-semibold tracking-wide text-text-muted uppercase">
-                    Categories
+                    Explore
                   </span>
                   {categories.map((category) => (
                     <Link
@@ -224,6 +244,16 @@ export function Navbar({ categories }: { categories: ICategory[] }) {
           </Sheet>
         </div>
       </Container>
+
+      {/* Search icon opens this panel instead of a permanently-visible input
+          — the SearchBar itself is untouched, just relocated behind a toggle. */}
+      {searchOpen && (
+        <div className="border-t border-border-light/70 bg-background/95 backdrop-blur-md">
+          <Container className="py-4 lg:px-8 xl:px-10">
+            <SearchBar className="mx-auto max-w-xl" onSearch={handleSearch} />
+          </Container>
+        </div>
+      )}
     </header>
   );
 }

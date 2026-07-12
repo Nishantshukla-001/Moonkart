@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
+import { BulkOrdersSection } from "@/components/footer/BulkOrdersSection";
 import { Footer } from "@/components/footer/Footer";
 import { Navbar } from "@/components/navigation/Navbar";
 import type { ICategory } from "@/types/product";
@@ -31,6 +32,7 @@ export function SiteChrome({
       <AnnouncementBar />
       <Navbar categories={categories} />
       <main className="min-w-0 flex-1">{children}</main>
+      <BulkOrdersSection />
       <Footer />
     </>
   );

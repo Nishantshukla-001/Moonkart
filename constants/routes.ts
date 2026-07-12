@@ -38,4 +38,5 @@ export const ROUTES = {
   adminSettings: "/admin/settings",
   contact: "/contact",
   about: "/about",
+  returnPolicy: "/return-refund-policy",
 } as const;

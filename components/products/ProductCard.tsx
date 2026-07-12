@@ -44,7 +44,7 @@ export function ProductCard({
   return (
     <Card
       className={cn(
-        "group h-full w-full gap-4 rounded-product-card p-0 ring-1 ring-transparent transition-all duration-[350ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-2 hover:shadow-soft-lg hover:ring-blush/25",
+        "group h-full w-full gap-3 rounded-product-card p-0 ring-1 ring-transparent transition-all duration-[350ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1.5 hover:shadow-soft-lg hover:ring-blush/25",
         className
       )}
     >
@@ -59,47 +59,49 @@ export function ProductCard({
             imageClassName="transition-transform duration-[500ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.08]"
           />
         </Link>
-        {badge && <ProductBadge type={badge} className="absolute top-3.5 left-3.5" />}
+        {badge && <ProductBadge type={badge} className="absolute top-3 left-3" />}
         <WishlistButton
           active={isWishlisted}
           onToggle={onToggleWishlist}
-          className="absolute top-3.5 right-3.5"
+          className="absolute top-3 right-3"
         />
       </div>
 
       {/* Bottom: category, name, rating, price, and a full-width CTA pinned
           to the card's bottom edge via mt-auto — so every card in a row
-          lines up its button regardless of how many lines the name wraps to. */}
-      <div className="flex flex-1 flex-col gap-2.5 px-5 pb-6">
+          lines up its button regardless of how many lines the name wraps to.
+          Kept deliberately compact (tight gaps, smaller type, a "sm" button)
+          so the card reads as square/premium rather than a tall rectangle. */}
+      <div className="flex flex-1 flex-col gap-1.5 px-4 pb-4">
         {category && (
-          <span className="text-xs font-medium tracking-[0.3px] text-text-muted uppercase">
+          <span className="text-[11px] font-medium tracking-[0.3px] text-text-muted uppercase">
             {category}
           </span>
         )}
         <Link href={`/products/${slug}`}>
-          <h3 className="line-clamp-2 font-heading text-[22px] leading-snug font-semibold text-text-primary transition-colors duration-[250ms] group-hover:text-blush-hover">
+          <h3 className="line-clamp-1 font-heading text-[15px] leading-snug font-semibold text-text-primary transition-colors duration-[250ms] group-hover:text-blush-hover">
             {name}
           </h3>
         </Link>
 
         {rating !== undefined && (
-          <div className="flex items-center gap-1 text-sm font-medium text-text-secondary">
-            <Star className="size-3.5 fill-warning text-warning" aria-hidden="true" />
+          <div className="flex items-center gap-1 text-xs font-medium text-text-secondary">
+            <Star className="size-3 fill-warning text-warning" aria-hidden="true" />
             <span aria-hidden="true">{rating.toFixed(1)}</span>
             <span className="sr-only">{rating.toFixed(1)} out of 5 stars</span>
           </div>
         )}
 
-        <div className="flex flex-wrap items-center gap-2 pt-0.5">
-          <span className="text-xl font-bold text-text-primary">{formatCurrency(price)}</span>
+        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+          <span className="text-base font-bold text-text-primary">{formatCurrency(price)}</span>
           {oldPrice && oldPrice > price && (
             <>
               {discountPercent > 0 && (
-                <span className="rounded-full bg-warm-yellow px-2 py-0.5 text-xs font-semibold text-text-primary">
+                <span className="rounded-full bg-warm-yellow px-1.5 py-0.5 text-[10px] font-semibold text-text-primary">
                   -{discountPercent}%
                 </span>
               )}
-              <span className="text-base font-medium text-text-muted line-through">
+              <span className="text-xs font-medium text-text-muted line-through">
                 {formatCurrency(oldPrice)}
               </span>
             </>
@@ -107,8 +109,8 @@ export function ProductCard({
         </div>
 
         <Button
-          size="lg"
-          className="group/btn mt-auto w-full hover:-translate-y-0.5"
+          size="sm"
+          className="group/btn mt-2 w-full hover:-translate-y-0.5"
           onClick={onAddToCart}
           aria-label={`Add ${name} to cart`}
         >

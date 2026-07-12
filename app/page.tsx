@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 
-import { Container } from "@/components/layout/Container";
+import heroBannerImage from "@/assets/moonkart-hero-banner.png";
 import { CategoryCard } from "@/components/categories/CategoryCard";
-import { HeroSection } from "@/components/shared/HeroSection";
+import { Container } from "@/components/layout/Container";
+import { HeroBanner } from "@/components/shared/HeroBanner";
 import { InstagramGallery } from "@/components/shared/InstagramGallery";
 import { NewsletterSection } from "@/components/shared/NewsletterSection";
 import { PromoBanner } from "@/components/shared/PromoBanner";
@@ -18,7 +19,6 @@ import {
   getTrendingProducts,
 } from "@/features/products/services/product.service";
 import {
-  heroContent,
   homepageSections,
   newsletterContent,
   promoBannerContent,
@@ -48,24 +48,11 @@ export default async function HomePage() {
 
   return (
     <>
-      <div className="pt-8">
-        <Container>
-          <HeroSection
-            eyebrow={heroContent.eyebrow}
-            heading={heroContent.heading}
-            subheading={heroContent.subheading}
-            ctaLabel={heroContent.ctaLabel}
-            ctaHref={heroContent.ctaHref}
-            secondaryCtaLabel={heroContent.secondaryCtaLabel}
-            secondaryCtaHref={heroContent.secondaryCtaHref}
-            imageSrc={heroContent.image}
-            imageAlt={heroContent.imageAlt}
-            background="blush"
-          />
-        </Container>
+      <div className="pt-8 pb-4 sm:pb-6">
+        <HeroBanner image={heroBannerImage} href="#explore" />
       </div>
 
-      <section className="py-16 sm:py-20">
+      <section id="explore" className="py-16 sm:py-20">
         <Container>
           <Reveal className="mb-10 flex flex-col items-center gap-2 text-center sm:mb-12">
             <h2 className="text-3xl font-bold tracking-tight text-text-primary sm:text-[32px]">
