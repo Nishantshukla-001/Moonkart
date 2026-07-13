@@ -6,9 +6,10 @@ import type {
   InstagramPostInput,
   UpdateInstagramPostInput,
 } from "@/features/instagram/validation/instagramPost.schema";
+import type { IInstagramPost } from "@/types/instagram";
 
 /** Storefront query — the homepage "Follow Our Style" section, newest curation first. */
-export function getVisibleInstagramPosts(limit = 8) {
+export function getVisibleInstagramPosts(limit = 8): Promise<IInstagramPost[]> {
   return prisma.instagramPost.findMany({
     where: { isVisible: true },
     orderBy: { displayOrder: "asc" },
@@ -16,7 +17,7 @@ export function getVisibleInstagramPosts(limit = 8) {
   });
 }
 
-export function getInstagramPostsAdmin() {
+export function getInstagramPostsAdmin(): Promise<IInstagramPost[]> {
   return prisma.instagramPost.findMany({ orderBy: { displayOrder: "asc" } });
 }
 
