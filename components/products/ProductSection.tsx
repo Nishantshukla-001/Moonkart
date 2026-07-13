@@ -13,6 +13,7 @@ interface ProductSectionProps {
   products: IProductWithRelations[];
   viewAllHref: string;
   background?: "white" | "blush" | "cream";
+  headingClassName?: string;
 }
 
 export function ProductSection({
@@ -21,6 +22,7 @@ export function ProductSection({
   products,
   viewAllHref,
   background = "white",
+  headingClassName,
 }: ProductSectionProps) {
   if (products.length === 0) {
     return (
@@ -33,7 +35,14 @@ export function ProductSection({
   }
 
   return (
-    <Carousel title={title} subtitle={subtitle} viewAllHref={viewAllHref} ariaLabel={title} background={background}>
+    <Carousel
+      title={title}
+      subtitle={subtitle}
+      viewAllHref={viewAllHref}
+      ariaLabel={title}
+      background={background}
+      headingClassName={headingClassName}
+    >
       {products.map((product) => (
         <ProductCardConnected key={product.id} product={product} />
       ))}

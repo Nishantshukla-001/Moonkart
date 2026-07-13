@@ -14,8 +14,8 @@ function initialsOf(name: string) {
 
 export function TestimonialCard({ name, quote, rating }: Testimonial) {
   return (
-    <Card className="relative flex h-full flex-col gap-4 p-7 ring-1 ring-transparent transition-all duration-[350ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-2 hover:shadow-soft-lg hover:ring-blush/20">
-      <Quote className="absolute top-6 right-6 size-8 text-blush-light" aria-hidden="true" />
+    <Card className="relative flex h-full flex-col gap-4 rounded-[24px] border border-blush-light bg-blush-light/40 p-7 ring-1 ring-transparent transition-all duration-[350ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-2 hover:bg-background hover:shadow-soft-lg hover:ring-blush-hover/30">
+      <Quote className="absolute top-6 right-6 size-8 text-blush" aria-hidden="true" />
       <div className="flex items-center gap-0.5">
         {Array.from({ length: 5 }).map((_, index) => (
           <Star

@@ -121,7 +121,7 @@ export function PromoBanner({
                 <span className="h-px w-8 bg-blush-hover/60" aria-hidden="true" />
               </span>
             )}
-            <h2 className="max-w-xl text-3xl leading-[120%] font-bold tracking-tight text-text-primary sm:text-4xl">
+            <h2 className="max-w-xl bg-gradient-to-r from-blush-hover via-blush to-blush-hover bg-clip-text text-3xl leading-[120%] font-bold tracking-tight text-transparent sm:text-4xl">
               {heading}
             </h2>
             {subheading && (

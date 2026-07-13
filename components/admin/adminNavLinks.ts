@@ -1,6 +1,7 @@
 import {
   BarChart3,
   Boxes,
+  Images,
   Layers,
   LayoutDashboard,
   LayoutGrid,
@@ -31,5 +32,6 @@ export const ADMIN_NAV_LINKS: AdminNavLink[] = [
   { label: "Orders", href: ROUTES.adminOrders, icon: ShoppingCart },
   { label: "Reviews", href: ROUTES.adminReviews, icon: Star },
   { label: "Customers", href: ROUTES.adminCustomers, icon: Users },
+  { label: "Follow Our Style", href: ROUTES.adminFollowOurStyle, icon: Images },
   { label: "Settings", href: ROUTES.adminSettings, icon: Settings },
 ];

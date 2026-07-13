@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Heart, LogOut, Menu, Search, ShieldCheck, ShoppingBag, User, X } from "lucide-react";
+import { ChevronDown, Heart, LogOut, Menu, Ribbon, Search, ShieldCheck, ShoppingBag, User, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -77,14 +77,21 @@ export function Navbar({ categories }: { categories: ICategory[] }) {
           className="flex shrink-0 items-center gap-3"
           aria-label={`${siteConfig.name} home`}
         >
-          <Image
-            src={logo}
-            alt={siteConfig.name}
-            width={36}
-            height={36}
-            className="rounded-full object-cover shadow-soft"
-            priority
-          />
+          <span className="relative flex size-11 shrink-0 items-center justify-center">
+            <span
+              aria-hidden="true"
+              className="absolute inset-0 rounded-full border-2 border-dashed border-blush-hover/50"
+            />
+            <Image
+              src={logo}
+              alt={siteConfig.name}
+              width={36}
+              height={36}
+              className="rounded-full object-cover shadow-soft"
+              priority
+            />
+            <Ribbon aria-hidden="true" className="absolute -top-1 -right-1 size-4 rotate-12 text-blush-hover" />
+          </span>
           {/* Hidden below 400px — logo mark + icon cluster don't fit alongside
               the full wordmark at the smallest supported widths (320–390px). */}
           <span className="hidden font-heading text-lg font-bold tracking-[0.2px] text-text-primary min-[400px]:inline">

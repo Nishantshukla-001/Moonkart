@@ -10,6 +10,8 @@ interface CategoryCardProps {
   image: string;
   productCount?: number;
   className?: string;
+  /** Overrides the default `/categories/${slug}` destination — e.g. a subcategory card that should link to its parent category filtered by subcategory. */
+  href?: string;
 }
 
 const pastelTints = ["bg-blush/25", "bg-blush/15", "bg-bg-section", "bg-warm-yellow/25"] as const;
@@ -19,9 +21,9 @@ function pastelTintFor(slug: string) {
   return pastelTints[sum % pastelTints.length];
 }
 
-export function CategoryCard({ name, slug, image, productCount, className }: CategoryCardProps) {
+export function CategoryCard({ name, slug, image, productCount, className, href }: CategoryCardProps) {
   return (
-    <Link href={`/categories/${slug}`}>
+    <Link href={href ?? `/categories/${slug}`}>
       <Card
         className={cn(
           "group gap-0 rounded-product-card p-0 ring-1 ring-transparent transition-all duration-[350ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-2 hover:shadow-soft-lg hover:ring-blush/40",

@@ -70,7 +70,7 @@ export function NewsletterSection({ heading, subheading, background }: Newslette
           </motion.div>
 
           <div className="relative flex flex-col items-center gap-4 px-6 py-20 text-center sm:py-24">
-            <h2 className="text-3xl font-bold tracking-tight text-text-primary sm:text-[32px]">
+            <h2 className="bg-gradient-to-r from-blush-hover via-blush to-blush-hover bg-clip-text text-3xl font-bold tracking-tight text-transparent sm:text-[32px]">
               {heading}
             </h2>
             {subheading && (

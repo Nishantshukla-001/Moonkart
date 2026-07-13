@@ -81,6 +81,10 @@ export const homepageSections = {
     title: "Trending Products",
     subtitle: "What everyone's adding to their bag right now.",
   },
+  moonEssentials: {
+    title: "Moon Essentials",
+    subtitle: "Everyday essentials you'll love.",
+  },
   newArrivals: {
     title: "New Arrivals",
     subtitle: "Fresh drops, straight from our latest edit.",

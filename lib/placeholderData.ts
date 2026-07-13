@@ -32,6 +32,12 @@ export interface PlaceholderCategory {
   productCount: number;
 }
 
+export interface PlaceholderSubCategory {
+  name: string;
+  slug: string;
+  image: string;
+}
+
 export interface PlaceholderCollection {
   name: string;
   slug: string;
@@ -52,6 +58,22 @@ export const categories: PlaceholderCategory[] = [
   { name: "Bags & Accessories", slug: "bags-accessories", image: placeholderImage("moonkart-cat-bags", 600, 450), productCount: 87 },
   { name: "Footwear", slug: "footwear", image: placeholderImage("moonkart-cat-footwear", 600, 450), productCount: 64 },
   { name: "Home & Lifestyle", slug: "home-lifestyle", image: placeholderImage("moonkart-cat-home", 600, 450), productCount: 52 },
+];
+
+/**
+ * "Moon Essentials" is a real Category row already in the database (slug
+ * `moon-essentials`) — but its four subcategories below don't exist there
+ * yet, so these cards are frontend-only for now. Each links to the parent
+ * category filtered by a `subCategory` slug matching what an admin would
+ * get from typing this exact name into the Subcategories form (see
+ * utils/generateSlug.ts). Once added there, products filed under them start
+ * showing up automatically — no homepage code changes needed.
+ */
+export const moonEssentialsSubcategories: PlaceholderSubCategory[] = [
+  { name: "Vanity Pouch", slug: "vanity-pouch", image: placeholderImage("moonkart-sub-vanity-pouch", 600, 450) },
+  { name: "Nails", slug: "nails", image: placeholderImage("moonkart-sub-nails", 600, 450) },
+  { name: "Hair Tie", slug: "hair-tie", image: placeholderImage("moonkart-sub-hair-tie", 600, 450) },
+  { name: "Hair Clip", slug: "hair-clip", image: placeholderImage("moonkart-sub-hair-clip", 600, 450) },
 ];
 
 export const trendingProducts: PlaceholderProduct[] = [

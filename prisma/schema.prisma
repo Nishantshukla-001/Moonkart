@@ -455,3 +455,22 @@ model StoreSettings {
 
   @@map("store_settings")
 }
+
+// ---------------------------------------------------------------------------
+// Homepage "Follow Our Style" gallery. Flat, admin-managed list of images —
+// not tied to real Instagram posts (still links out to the profile URL from
+// constants/config.ts), just admin-uploaded photos shown in that section.
+// ---------------------------------------------------------------------------
+
+model InstagramPost {
+  id           String   @id @default(uuid()) @db.Uuid
+  imageUrl     String   @map("image_url")
+  publicId     String?  @map("public_id")
+  displayOrder Int      @default(0) @map("display_order")
+  isVisible    Boolean  @default(true) @map("is_visible")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([isVisible, displayOrder])
+  @@map("instagram_posts")
+}

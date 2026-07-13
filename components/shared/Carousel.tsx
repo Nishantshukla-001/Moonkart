@@ -24,6 +24,8 @@ interface CarouselProps {
    */
   children: React.ReactNode;
   className?: string;
+  /** Optional override merged onto the `<h2>` — e.g. the homepage's gradient-text treatment. Empty by default so every other caller is unaffected. */
+  headingClassName?: string;
 }
 
 export const sectionBackgrounds = {
@@ -49,6 +51,7 @@ export function Carousel({
   background = "white",
   children,
   className,
+  headingClassName,
 }: CarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollPrev, setCanScrollPrev] = useState(false);
@@ -106,7 +109,7 @@ export function Carousel({
     <section className={cn("py-16 sm:py-20", sectionBackgrounds[background], className)}>
       <Container>
         <Reveal className="mb-8 flex flex-col gap-2 sm:mb-10">
-          <h2 className="text-3xl font-bold tracking-tight text-text-primary sm:text-[32px]">
+          <h2 className={cn("text-3xl font-bold tracking-tight text-text-primary sm:text-[32px]", headingClassName)}>
             {title}
           </h2>
           {subtitle && <p className="text-base text-text-secondary">{subtitle}</p>}
