@@ -47,6 +47,7 @@ model Category {
   updatedAt     DateTime      @updatedAt @map("updated_at")
   products      Product[]
   subCategories SubCategory[]
+  featuredEntry FeaturedCategory?
 
   @@index([slug])
   @@map("categories")
@@ -64,6 +65,7 @@ model SubCategory {
   updatedAt   DateTime  @updatedAt @map("updated_at")
   products    Product[]
   category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  featuredEntry FeaturedSubCategory?
 
   @@index([categoryId])
   @@index([slug])
@@ -473,4 +475,107 @@ model InstagramPost {
 
   @@index([isVisible, displayOrder])
   @@map("instagram_posts")
+}
+
+// ---------------------------------------------------------------------------
+// Homepage CMS (Phase 10). One singleton row for every editable piece of
+// homepage copy/imagery/visibility that isn't already covered by an existing
+// table — mirrors the StoreSettings singleton pattern. FeaturedCategory /
+// FeaturedSubCategory are thin order+visibility pointers into the *existing*
+// Category/SubCategory tables (never copies name/image/slug), so the admin
+// picks which real categories appear in the homepage grids and in what order
+// without a parallel, duplicated content system.
+// ---------------------------------------------------------------------------
+
+model HomepageContent {
+  id String @id @default("singleton")
+
+  heroImageUrl            String?  @map("hero_image_url")
+  heroImagePublicId       String?  @map("hero_image_public_id")
+  heroMobileImageUrl      String?  @map("hero_mobile_image_url")
+  heroMobileImagePublicId String?  @map("hero_mobile_image_public_id")
+  heroTitle               String?  @map("hero_title")
+  heroSubtitle            String?  @map("hero_subtitle")
+  heroButtonText          String?  @map("hero_button_text")
+  heroButtonLink          String?  @map("hero_button_link")
+  heroIsVisible           Boolean  @default(true) @map("hero_is_visible")
+
+  announcementText      String?  @map("announcement_text")
+  announcementLink      String?  @map("announcement_link")
+  announcementIsEnabled Boolean  @default(true) @map("announcement_is_enabled")
+
+  featuredCategoriesTitle      String  @default("Featured Categories") @map("featured_categories_title")
+  featuredCategoriesSubtitle   String? @map("featured_categories_subtitle")
+  featuredCategoriesIsVisible  Boolean @default(true) @map("featured_categories_is_visible")
+
+  moonEssentialsTitle     String  @default("Moon Essentials") @map("moon_essentials_title")
+  moonEssentialsSubtitle  String? @map("moon_essentials_subtitle")
+  moonEssentialsIsVisible Boolean @default(true) @map("moon_essentials_is_visible")
+
+  promoEyebrow             String?  @map("promo_eyebrow")
+  promoHeading             String?  @map("promo_heading")
+  promoSubheading          String?  @map("promo_subheading")
+  promoButtonText          String?  @map("promo_button_text")
+  promoButtonLink          String?  @map("promo_button_link")
+  promoImageUrl            String?  @map("promo_image_url")
+  promoImagePublicId       String?  @map("promo_image_public_id")
+  promoMobileImageUrl      String?  @map("promo_mobile_image_url")
+  promoMobileImagePublicId String?  @map("promo_mobile_image_public_id")
+  promoIsVisible           Boolean  @default(true) @map("promo_is_visible")
+
+  followOurStyleTitle     String  @default("Follow Our Style") @map("follow_our_style_title")
+  instagramUsername       String? @map("instagram_username")
+  followOurStyleIsVisible Boolean @default(true) @map("follow_our_style_is_visible")
+
+  newArrivalsTitle     String  @default("New Arrivals") @map("new_arrivals_title")
+  newArrivalsSubtitle  String? @map("new_arrivals_subtitle")
+  newArrivalsIsVisible Boolean @default(true) @map("new_arrivals_is_visible")
+
+  bestSellersTitle     String  @default("Best Sellers") @map("best_sellers_title")
+  bestSellersSubtitle  String? @map("best_sellers_subtitle")
+  bestSellersIsVisible Boolean @default(true) @map("best_sellers_is_visible")
+
+  whyChooseUsSubtitle  String? @map("why_choose_us_subtitle")
+  whyChooseUsIsVisible Boolean @default(true) @map("why_choose_us_is_visible")
+
+  testimonialsTitle     String  @default("Loved by Our Customers") @map("testimonials_title")
+  testimonialsSubtitle  String? @map("testimonials_subtitle")
+  testimonialsIsVisible Boolean @default(true) @map("testimonials_is_visible")
+
+  newsletterHeading    String  @default("Join the MoonKart Circle") @map("newsletter_heading")
+  newsletterSubheading String? @map("newsletter_subheading")
+  newsletterIsVisible  Boolean @default(true) @map("newsletter_is_visible")
+
+  footerText    String? @map("footer_text")
+  copyrightText String? @map("copyright_text")
+
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("homepage_content")
+}
+
+model FeaturedCategory {
+  id           String   @id @default(uuid()) @db.Uuid
+  categoryId   String   @unique @map("category_id") @db.Uuid
+  displayOrder Int      @default(0) @map("display_order")
+  isVisible    Boolean  @default(true) @map("is_visible")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  category     Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([isVisible, displayOrder])
+  @@map("featured_categories")
+}
+
+model FeaturedSubCategory {
+  id            String      @id @default(uuid()) @db.Uuid
+  subCategoryId String      @unique @map("sub_category_id") @db.Uuid
+  displayOrder  Int         @default(0) @map("display_order")
+  isVisible     Boolean     @default(true) @map("is_visible")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  subCategory   SubCategory @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+
+  @@index([isVisible, displayOrder])
+  @@map("featured_subcategories")
 }

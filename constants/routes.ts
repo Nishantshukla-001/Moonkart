@@ -24,6 +24,7 @@ export const ROUTES = {
   verifyEmail: "/auth/verify-email",
   admin: "/admin",
   adminDashboard: "/admin/dashboard",
+  adminHomepage: "/admin/homepage",
   adminAnalytics: "/admin/analytics",
   adminInventory: "/admin/inventory",
   adminProducts: "/admin/products",

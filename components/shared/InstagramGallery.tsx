@@ -1,31 +1,39 @@
 import { Container } from "@/components/layout/Container";
 import { AspectImage } from "@/components/shared/AspectImage";
-import { FloatingDoodles } from "@/components/shared/FloatingDoodles";
 import { InstagramIcon } from "@/components/shared/InstagramIcon";
-import { PastelBackdrop } from "@/components/shared/PastelBackdrop";
 import { Reveal, RevealItem } from "@/components/shared/Reveal";
 import { socialLinks } from "@/constants/config";
 
-export function InstagramGallery({ images }: { images: string[] }) {
+interface InstagramGalleryProps {
+  images: string[];
+  title?: string;
+  instagramUrl?: string;
+  instagramUsername?: string;
+}
+
+export function InstagramGallery({
+  images,
+  title = "Follow Our Style",
+  instagramUrl = socialLinks.instagram.url,
+  instagramUsername = socialLinks.instagram.username,
+}: InstagramGalleryProps) {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-blush-light/60 via-background to-sage-light/40 py-16 sm:py-20">
-      <PastelBackdrop />
-      <FloatingDoodles />
+    <section className="py-16 sm:py-20">
       <Container>
         <Reveal className="mb-10 flex flex-col items-center gap-2 text-center sm:mb-12">
-          <h2 className="bg-gradient-to-r from-blush-hover via-blush to-blush-hover bg-clip-text text-3xl font-bold tracking-tight text-transparent sm:text-[32px]">
-            Follow Our Style
+          <h2 className="bg-gradient-to-r from-blush-deep via-blush-deep-hover to-blush-deep bg-clip-text text-3xl font-bold tracking-tight text-transparent [text-shadow:_0_1px_3px_rgb(255_255_255_/_70%)] sm:text-[32px]">
+            {title}
           </h2>
           <a
-            href={socialLinks.instagram.url}
+            href={instagramUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="group/handle flex items-center gap-2 text-base font-semibold text-blush-hover transition-colors duration-[250ms] hover:text-text-primary"
+            className="group/handle flex items-center gap-2 text-base font-semibold text-blush-deep transition-colors duration-[250ms] hover:text-text-primary"
           >
-            <span className="flex size-8 items-center justify-center rounded-full bg-blush-light text-blush-hover transition-transform duration-[250ms] group-hover/handle:scale-110">
+            <span className="flex size-8 items-center justify-center rounded-full bg-blush-light text-blush-deep transition-transform duration-[250ms] group-hover/handle:scale-110">
               <InstagramIcon className="size-4.5" />
             </span>
-            @{socialLinks.instagram.username}
+            @{instagramUsername}
           </a>
         </Reveal>
 
@@ -36,7 +44,7 @@ export function InstagramGallery({ images }: { images: string[] }) {
             {images.map((image, index) => (
               <RevealItem key={image}>
                 <a
-                  href={socialLinks.instagram.url}
+                  href={instagramUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group relative block rounded-image shadow-soft transition-all duration-[350ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1.5 hover:shadow-[0_0_0_4px_rgb(245_212_220_/_0.5),0_18px_36px_-10px_rgb(239_198_209_/_0.55)]"

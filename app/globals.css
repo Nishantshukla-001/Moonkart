@@ -58,6 +58,8 @@
   --color-blush: var(--blush);
   --color-blush-hover: var(--blush-hover);
   --color-blush-light: var(--blush-light);
+  --color-blush-deep: var(--blush-deep);
+  --color-blush-deep-hover: var(--blush-deep-hover);
   --color-warm-yellow: var(--warm-yellow);
 
   --color-bg-secondary: var(--bg-secondary);
@@ -176,6 +178,17 @@
   --blush-hover: #efc6d1;
   --blush-light: #fdf2f5;
   --warm-yellow: #f9edb7;
+
+  /*
+    Deeper pink reserved for gradient section headings only (Featured
+    Categories, Moon Essentials, New Arrivals, Best Sellers, Why Choose Us,
+    Testimonials, Follow Our Style, Newsletter). The soft --blush/--blush-hover
+    tokens above are correct for buttons/cards/backgrounds but read as too
+    pale for heading text against the pastel backdrop — this pair keeps the
+    same pink hue family at a contrast-safe depth.
+  */
+  --blush-deep: #c2185b;
+  --blush-deep-hover: #d6336c;
 
   --bg-secondary: #fcfcf9;
   --bg-section: #fffdf7;

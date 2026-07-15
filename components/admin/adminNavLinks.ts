@@ -1,6 +1,7 @@
 import {
   BarChart3,
   Boxes,
+  Home,
   Images,
   Layers,
   LayoutDashboard,
@@ -23,6 +24,7 @@ export interface AdminNavLink {
 
 export const ADMIN_NAV_LINKS: AdminNavLink[] = [
   { label: "Dashboard", href: ROUTES.adminDashboard, icon: LayoutDashboard },
+  { label: "Homepage Content", href: ROUTES.adminHomepage, icon: Home },
   { label: "Analytics", href: ROUTES.adminAnalytics, icon: BarChart3 },
   { label: "Products", href: ROUTES.adminProducts, icon: Package },
   { label: "Inventory", href: ROUTES.adminInventory, icon: Boxes },

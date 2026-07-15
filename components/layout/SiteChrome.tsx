@@ -1,11 +1,13 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import type { StoreSettings } from "@prisma/client";
 
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { BulkOrdersSection } from "@/components/footer/BulkOrdersSection";
 import { Footer } from "@/components/footer/Footer";
 import { Navbar } from "@/components/navigation/Navbar";
+import type { IHomepageContent } from "@/types/homepageContent";
 import type { ICategory } from "@/types/product";
 
 /**
@@ -15,9 +17,13 @@ import type { ICategory } from "@/types/product";
  */
 export function SiteChrome({
   categories,
+  storeSettings,
+  homepageContent,
   children,
 }: {
   categories: ICategory[];
+  storeSettings: StoreSettings;
+  homepageContent: IHomepageContent;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -29,11 +35,15 @@ export function SiteChrome({
 
   return (
     <>
-      <AnnouncementBar />
+      <AnnouncementBar
+        text={homepageContent.announcementText}
+        link={homepageContent.announcementLink}
+        isEnabled={homepageContent.announcementIsEnabled}
+      />
       <Navbar categories={categories} />
       <main className="min-w-0 flex-1">{children}</main>
       <BulkOrdersSection />
-      <Footer />
+      <Footer storeSettings={storeSettings} homepageContent={homepageContent} />
     </>
   );
 }

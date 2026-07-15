@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 
 import heroBannerImage from "@/assets/moonkart-hero-banner.png";
+import pinkTexture from "@/assets/pinkcolor.jpeg";
 import { FeaturedCategoryCard } from "@/components/categories/FeaturedCategoryCard";
 import { Container } from "@/components/layout/Container";
-import { FloatingDoodles } from "@/components/shared/FloatingDoodles";
 import { HeroBanner } from "@/components/shared/HeroBanner";
+import { HomepageBackground } from "@/components/shared/HomepageBackground";
 import { InstagramGallery } from "@/components/shared/InstagramGallery";
 import { NewsletterSection } from "@/components/shared/NewsletterSection";
-import { PastelBackdrop } from "@/components/shared/PastelBackdrop";
 import { PromoBanner } from "@/components/shared/PromoBanner";
 import { Reveal, RevealItem } from "@/components/shared/Reveal";
 import { SectionHeading } from "@/components/shared/SectionHeading";
@@ -15,18 +15,20 @@ import { TestimonialCard } from "@/components/shared/TestimonialCard";
 import { WhyChooseUs } from "@/components/shared/WhyChooseUs";
 import { ProductSection } from "@/components/products/ProductSection";
 import { ROUTES } from "@/constants/routes";
+import { getCategories, getCategoryBySlug } from "@/features/categories/services/category.service";
+import {
+  getFeaturedCategoriesForHomepage,
+  getFeaturedSubCategoriesForHomepage,
+} from "@/features/homepage/services/featuredCategory.service";
+import { getHomepageContent } from "@/features/homepage/services/homepageContent.service";
+import { getVisibleInstagramPosts } from "@/features/instagram/services/instagramPost.service";
 import {
   getBestSellers,
   getNewArrivals,
 } from "@/features/products/services/product.service";
-import { getVisibleInstagramPosts } from "@/features/instagram/services/instagramPost.service";
-import {
-  homepageSections,
-  newsletterContent,
-  promoBannerContent,
-  whyChooseUsFeatures,
-} from "@/lib/homepageContent";
-import { categories, moonEssentialsSubcategories, testimonials } from "@/lib/placeholderData";
+import { whyChooseUsFeatures } from "@/lib/homepageContent";
+import { placeholderImage } from "@/lib/placeholderImages";
+import { testimonials } from "@/lib/placeholderData";
 
 export const metadata: Metadata = {
   title: "Premium Fashion, Jewellery & Beauty Marketplace",
@@ -34,159 +36,218 @@ export const metadata: Metadata = {
     "Discover elegant jewellery, beauty essentials, and fashion at MoonKart — a premium marketplace curated for the modern woman.",
 };
 
-// Reused on every homepage section background so the "pastel gradient" heading and floating doodles read consistently across the page.
+// Reused on every homepage section heading so the "pastel gradient" title reads consistently across the page.
 const GRADIENT_HEADING_CLASS =
-  "bg-gradient-to-r from-blush-hover via-blush to-blush-hover bg-clip-text text-transparent";
+  "bg-gradient-to-r from-blush-deep via-blush-deep-hover to-blush-deep bg-clip-text text-transparent [text-shadow:_0_1px_3px_rgb(255_255_255_/_70%)]";
 
-// ISR: homepage product sections are re-generated in the background at most
-// once a minute, so admin edits/creates (which also call revalidatePath("/")
-// — see app/api/admin/products routes) show up immediately, while ordinary
-// traffic serves a cached page instead of hitting Prisma on every request.
+// ISR: homepage content/product sections are re-generated in the background
+// at most once a minute, so admin edits (which also call revalidatePath("/")
+// — see the admin homepage/product API routes) show up immediately, while
+// ordinary traffic serves a cached page instead of hitting Prisma every request.
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const [newArrivalProducts, bestSellerProducts, instagramPosts] = await Promise.all([
+  const [
+    content,
+    featuredCategories,
+    featuredSubCategories,
+    allCategories,
+    moonEssentialsCategory,
+    newArrivalProducts,
+    bestSellerProducts,
+    instagramPosts,
+  ] = await Promise.all([
+    getHomepageContent(),
+    getFeaturedCategoriesForHomepage(6),
+    getFeaturedSubCategoriesForHomepage(8),
+    getCategories(),
+    getCategoryBySlug("moon-essentials"),
     getNewArrivals(8),
     getBestSellers(8),
     getVisibleInstagramPosts(8),
   ]);
 
+  // Featured Categories/Moon Essentials are admin-curated (order + visibility
+  // picked from the real Category/SubCategory system), but until an admin
+  // actually curates them on a fresh install, fall back to the plain
+  // category list so these sections keep showing real content instead of
+  // vanishing — exactly how they behaved before the curation feature existed.
+  const categoriesToShow =
+    featuredCategories.length > 0
+      ? featuredCategories.map(({ id, category }) => ({ id, category, href: undefined as string | undefined }))
+      : allCategories
+          .slice(0, 6)
+          .map((category) => ({ id: category.id, category, href: undefined as string | undefined }));
+
+  const subCategoriesToShow =
+    featuredSubCategories.length > 0
+      ? featuredSubCategories.map(({ id, subCategory }) => ({
+          id,
+          subCategory,
+          href: `${ROUTES.category(subCategory.category.slug)}?subCategory=${subCategory.slug}`,
+        }))
+      : (moonEssentialsCategory?.subCategories ?? []).map((subCategory) => ({
+          id: subCategory.id,
+          subCategory: { ...subCategory, category: moonEssentialsCategory! },
+          href: `${ROUTES.category(moonEssentialsCategory!.slug)}?subCategory=${subCategory.slug}`,
+        }));
+
   return (
-    <>
-      <section className="relative overflow-hidden bg-gradient-to-b from-sage-light via-blush-light/70 to-background pt-10 pb-10 sm:pt-14 sm:pb-14">
-        <PastelBackdrop />
-        <FloatingDoodles />
-        <HeroBanner image={heroBannerImage} href="#explore" />
-      </section>
+    <div className="relative">
+      {/* One global decorative layer, explicitly z-0, behind the entire
+          homepage. Every section below lives in a z-10 content wrapper, so
+          the background can never paint on top of cards/text/buttons — see
+          HomepageBackground's doc comment for why the old per-section
+          approach didn't guarantee that. */}
+      <HomepageBackground />
 
-      <section
-        id="explore"
-        className="relative overflow-hidden bg-gradient-to-br from-sage-light/70 via-background to-blush-light/60 py-16 sm:py-20"
-      >
-        <PastelBackdrop />
-        <FloatingDoodles />
-        <Container>
-          <Reveal>
-            <SectionHeading
-              title={homepageSections.featuredCategories.title}
-              subtitle={homepageSections.featuredCategories.subtitle}
-              className="mb-10 sm:mb-12"
+      <div className="relative z-10">
+        {content.heroIsVisible && (
+          <section className="pt-10 pb-10 sm:pt-14 sm:pb-14">
+            <HeroBanner
+              image={content.heroImageUrl || heroBannerImage}
+              mobileImage={content.heroMobileImageUrl}
+              href={content.heroButtonLink || "#explore"}
+              alt={content.heroTitle || undefined}
             />
-          </Reveal>
+          </section>
+        )}
 
-          <Reveal
-            stagger
-            className="grid grid-cols-2 gap-5 sm:gap-6 md:grid-cols-3 lg:grid-cols-6"
-          >
-            {categories.map((category) => (
-              <RevealItem key={category.slug}>
-                <FeaturedCategoryCard
-                  name={category.name}
-                  slug={category.slug}
-                  image={category.image}
-                  productCount={category.productCount}
+        {content.featuredCategoriesIsVisible && categoriesToShow.length > 0 && (
+          <section id="explore" className="py-16 sm:py-20">
+            <Container>
+              <Reveal>
+                <SectionHeading
+                  title={content.featuredCategoriesTitle}
+                  subtitle={content.featuredCategoriesSubtitle ?? undefined}
+                  className="mb-10 sm:mb-12"
                 />
-              </RevealItem>
-            ))}
-          </Reveal>
-        </Container>
-      </section>
+              </Reveal>
 
-      <section className="relative overflow-hidden bg-gradient-to-tr from-blush-light via-warm-yellow/20 to-sage-light/60 py-16 sm:py-20">
-        <PastelBackdrop />
-        <FloatingDoodles />
-        <Container>
-          <Reveal>
-            <SectionHeading
-              title={homepageSections.moonEssentials.title}
-              subtitle={homepageSections.moonEssentials.subtitle}
-              className="mb-10 sm:mb-12"
-            />
-          </Reveal>
+              <Reveal
+                stagger
+                className="grid grid-cols-2 gap-5 sm:gap-6 md:grid-cols-3 lg:grid-cols-6"
+              >
+                {categoriesToShow.map(({ id, category, href }) => (
+                  <RevealItem key={id}>
+                    <FeaturedCategoryCard
+                      name={category.name}
+                      slug={category.slug}
+                      image={category.image || placeholderImage(category.slug, 600, 750)}
+                      href={href}
+                    />
+                  </RevealItem>
+                ))}
+              </Reveal>
+            </Container>
+          </section>
+        )}
 
-          <Reveal
-            stagger
-            className="grid grid-cols-2 gap-5 sm:gap-6 md:grid-cols-4"
-          >
-            {moonEssentialsSubcategories.map((subcategory) => (
-              <RevealItem key={subcategory.slug}>
-                <FeaturedCategoryCard
-                  name={subcategory.name}
-                  slug={subcategory.slug}
-                  image={subcategory.image}
-                  href={`${ROUTES.category("moon-essentials")}?subCategory=${subcategory.slug}`}
+        {content.moonEssentialsIsVisible && subCategoriesToShow.length > 0 && (
+          <section className="py-16 sm:py-20">
+            <Container>
+              <Reveal>
+                <SectionHeading
+                  title={content.moonEssentialsTitle}
+                  subtitle={content.moonEssentialsSubtitle ?? undefined}
+                  className="mb-10 sm:mb-12"
                 />
-              </RevealItem>
-            ))}
-          </Reveal>
-        </Container>
-      </section>
+              </Reveal>
 
-      <div className="relative overflow-hidden bg-gradient-to-b from-background to-blush-light/30">
-        <PastelBackdrop />
-        <FloatingDoodles />
-        <ProductSection
-          title={homepageSections.newArrivals.title}
-          subtitle={homepageSections.newArrivals.subtitle}
-          products={newArrivalProducts}
-          viewAllHref={`${ROUTES.products}?section=new-arrivals`}
-          headingClassName={GRADIENT_HEADING_CLASS}
-        />
+              <Reveal
+                stagger
+                className="grid grid-cols-2 gap-5 sm:gap-6 md:grid-cols-4"
+              >
+                {subCategoriesToShow.map(({ id, subCategory, href }) => (
+                  <RevealItem key={id}>
+                    <FeaturedCategoryCard
+                      name={subCategory.name}
+                      slug={subCategory.slug}
+                      image={subCategory.image || placeholderImage(subCategory.slug, 600, 750)}
+                      href={href}
+                    />
+                  </RevealItem>
+                ))}
+              </Reveal>
+            </Container>
+          </section>
+        )}
+
+        {content.newArrivalsIsVisible && (
+          <ProductSection
+            title={content.newArrivalsTitle}
+            subtitle={content.newArrivalsSubtitle ?? undefined}
+            products={newArrivalProducts}
+            viewAllHref={`${ROUTES.products}?section=new-arrivals`}
+            headingClassName={GRADIENT_HEADING_CLASS}
+          />
+        )}
+
+        {content.promoIsVisible && (
+          <PromoBanner
+            eyebrow={content.promoEyebrow ?? undefined}
+            heading={content.promoHeading || "Up to 30% Off Statement Jewellery"}
+            subheading={content.promoSubheading ?? undefined}
+            ctaLabel={content.promoButtonText || "Shop the Sale"}
+            ctaHref={content.promoButtonLink || ROUTES.products}
+            background={content.promoImageUrl || pinkTexture}
+            mobileBackground={content.promoMobileImageUrl}
+          />
+        )}
+
+        {content.bestSellersIsVisible && (
+          <ProductSection
+            title={content.bestSellersTitle}
+            subtitle={content.bestSellersSubtitle ?? undefined}
+            products={bestSellerProducts}
+            viewAllHref={`${ROUTES.products}?section=best-sellers`}
+            background="white"
+            headingClassName={GRADIENT_HEADING_CLASS}
+          />
+        )}
+
+        {content.whyChooseUsIsVisible && (
+          <WhyChooseUs features={whyChooseUsFeatures} subtitle={content.whyChooseUsSubtitle ?? undefined} />
+        )}
+
+        {content.testimonialsIsVisible && (
+          <section className="py-16 sm:py-20">
+            <Container>
+              <Reveal>
+                <SectionHeading
+                  title={content.testimonialsTitle}
+                  subtitle={content.testimonialsSubtitle ?? undefined}
+                  className="mb-10 sm:mb-12"
+                />
+              </Reveal>
+
+              <Reveal stagger className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                {testimonials.map((testimonial) => (
+                  <RevealItem key={testimonial.name}>
+                    <TestimonialCard {...testimonial} />
+                  </RevealItem>
+                ))}
+              </Reveal>
+            </Container>
+          </section>
+        )}
+
+        {content.followOurStyleIsVisible && (
+          <InstagramGallery
+            images={instagramPosts.map((post) => post.imageUrl)}
+            title={content.followOurStyleTitle}
+            instagramUsername={content.instagramUsername ?? undefined}
+          />
+        )}
+
+        {content.newsletterIsVisible && (
+          <NewsletterSection
+            heading={content.newsletterHeading}
+            subheading={content.newsletterSubheading ?? undefined}
+            background={pinkTexture}
+          />
+        )}
       </div>
-
-      <PromoBanner
-        eyebrow={promoBannerContent.eyebrow}
-        heading={promoBannerContent.heading}
-        subheading={promoBannerContent.subheading}
-        ctaLabel={promoBannerContent.ctaLabel}
-        ctaHref={promoBannerContent.ctaHref}
-        background={promoBannerContent.background}
-      />
-
-      <div className="relative overflow-hidden bg-gradient-to-b from-sage-light/50 via-background to-warm-yellow/15">
-        <PastelBackdrop />
-        <FloatingDoodles />
-        <ProductSection
-          title={homepageSections.bestSellers.title}
-          subtitle={homepageSections.bestSellers.subtitle}
-          products={bestSellerProducts}
-          viewAllHref={`${ROUTES.products}?section=best-sellers`}
-          background="white"
-          headingClassName={GRADIENT_HEADING_CLASS}
-        />
-      </div>
-
-      <WhyChooseUs features={whyChooseUsFeatures} subtitle={homepageSections.whyChooseUs.subtitle} />
-
-      <section className="relative overflow-hidden bg-gradient-to-br from-blush-light/60 via-background to-sage-light/50 py-16 sm:py-20">
-        <PastelBackdrop />
-        <FloatingDoodles />
-        <Container>
-          <Reveal>
-            <SectionHeading
-              title={homepageSections.testimonials.title}
-              subtitle={homepageSections.testimonials.subtitle}
-              className="mb-10 sm:mb-12"
-            />
-          </Reveal>
-
-          <Reveal stagger className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {testimonials.map((testimonial) => (
-              <RevealItem key={testimonial.name}>
-                <TestimonialCard {...testimonial} />
-              </RevealItem>
-            ))}
-          </Reveal>
-        </Container>
-      </section>
-
-      <InstagramGallery images={instagramPosts.map((post) => post.imageUrl)} />
-
-      <NewsletterSection
-        heading={newsletterContent.heading}
-        subheading={newsletterContent.subheading}
-        background={newsletterContent.background}
-      />
-    </>
+    </div>
   );
 }

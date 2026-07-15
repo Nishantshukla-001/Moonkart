@@ -8,6 +8,7 @@ import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/layout/Container";
 import { Reveal } from "@/components/shared/Reveal";
+import { cn } from "@/lib/utils";
 
 interface PromoBannerProps {
   eyebrow?: string;
@@ -15,7 +16,9 @@ interface PromoBannerProps {
   subheading?: string;
   ctaLabel: string;
   ctaHref: string;
-  background: StaticImageData;
+  background: string | StaticImageData;
+  /** Optional CMS-uploaded alternate for small screens — falls back to `background` when unset. */
+  mobileBackground?: string | StaticImageData | null;
 }
 
 export function PromoBanner({
@@ -25,6 +28,7 @@ export function PromoBanner({
   ctaLabel,
   ctaHref,
   background,
+  mobileBackground,
 }: PromoBannerProps) {
   return (
     <section className="py-16 sm:py-20">
@@ -40,11 +44,20 @@ export function PromoBanner({
             aria-hidden="true"
             className="pointer-events-none absolute inset-x-0 top-0 mx-auto h-64 w-[70%] bg-radial from-warm-yellow/35 via-transparent to-transparent blur-2xl"
           />
+          {mobileBackground && (
+            <Image
+              src={mobileBackground}
+              alt=""
+              fill
+              className="object-cover opacity-[0.06] mix-blend-multiply lg:hidden"
+              aria-hidden="true"
+            />
+          )}
           <Image
             src={background}
             alt=""
             fill
-            className="object-cover opacity-[0.06] mix-blend-multiply"
+            className={cn("object-cover opacity-[0.06] mix-blend-multiply", mobileBackground && "hidden lg:block")}
             aria-hidden="true"
           />
           <div
@@ -115,13 +128,13 @@ export function PromoBanner({
 
           <div className="relative flex flex-col items-center gap-4 px-6 py-20 text-center sm:py-24">
             {eyebrow && (
-              <span className="flex items-center gap-2 text-sm font-semibold tracking-[0.3px] text-blush-hover uppercase">
-                <span className="h-px w-8 bg-blush-hover/60" aria-hidden="true" />
+              <span className="flex items-center gap-2 text-sm font-semibold tracking-[0.3px] text-blush-deep uppercase">
+                <span className="h-px w-8 bg-blush-deep/60" aria-hidden="true" />
                 {eyebrow}
-                <span className="h-px w-8 bg-blush-hover/60" aria-hidden="true" />
+                <span className="h-px w-8 bg-blush-deep/60" aria-hidden="true" />
               </span>
             )}
-            <h2 className="max-w-xl bg-gradient-to-r from-blush-hover via-blush to-blush-hover bg-clip-text text-3xl leading-[120%] font-bold tracking-tight text-transparent sm:text-4xl">
+            <h2 className="max-w-xl bg-gradient-to-r from-blush-deep via-blush-deep-hover to-blush-deep bg-clip-text text-3xl leading-[120%] font-bold tracking-tight text-transparent [text-shadow:_0_1px_3px_rgb(255_255_255_/_70%)] sm:text-4xl">
               {heading}
             </h2>
             {subheading && (

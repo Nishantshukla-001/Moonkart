@@ -1,6 +1,4 @@
 import { Container } from "@/components/layout/Container";
-import { FloatingDoodles } from "@/components/shared/FloatingDoodles";
-import { PastelBackdrop } from "@/components/shared/PastelBackdrop";
 import { Reveal, RevealItem } from "@/components/shared/Reveal";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { siteConfig } from "@/constants/config";
@@ -13,9 +11,7 @@ interface WhyChooseUsProps {
 
 export function WhyChooseUs({ features, subtitle }: WhyChooseUsProps) {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-warm-yellow/15 via-background to-blush-light/40 py-16 sm:py-20">
-      <PastelBackdrop />
-      <FloatingDoodles />
+    <section className="py-16 sm:py-20">
       <Container>
         <Reveal>
           <SectionHeading

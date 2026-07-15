@@ -1,6 +1,7 @@
-import { Mail, MapPin, Phone } from "lucide-react";
+import { Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import type { StoreSettings } from "@prisma/client";
 
 import logo from "@/assets/logo.jpeg";
 import { Container } from "@/components/layout/Container";
@@ -8,18 +9,13 @@ import { InstagramIcon } from "@/components/shared/InstagramIcon";
 import { NewsletterForm } from "@/components/shared/NewsletterForm";
 import { ROUTES } from "@/constants/routes";
 import { businessAddress, contactInfo, siteConfig, socialLinks } from "@/constants/config";
+import type { IHomepageContent } from "@/types/homepageContent";
 
 const quickLinks = [
   { label: "Home", href: ROUTES.home },
   { label: "Products", href: ROUTES.products },
   { label: "About", href: ROUTES.about },
   { label: "Contact", href: ROUTES.contact },
-];
-
-const contactRows = [
-  { icon: Mail, label: contactInfo.supportEmail, href: `mailto:${contactInfo.supportEmail}` },
-  { icon: Phone, label: contactInfo.phone, href: `tel:${contactInfo.phone}` },
-  { icon: MapPin, label: businessAddress.full, href: undefined },
 ];
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
@@ -33,7 +29,28 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function Footer() {
+interface FooterProps {
+  storeSettings: StoreSettings;
+  homepageContent: IHomepageContent;
+}
+
+export function Footer({ storeSettings, homepageContent }: FooterProps) {
+  const instagramUrl = storeSettings.instagramUrl || socialLinks.instagram.url;
+  const instagramUsername = homepageContent.instagramUsername || socialLinks.instagram.username;
+  const whatsappNumber = storeSettings.whatsappNumber;
+  const footerText = homepageContent.footerText || siteConfig.description;
+  const copyrightText =
+    homepageContent.copyrightText || `© ${new Date().getFullYear()} ${siteConfig.name}. All rights reserved.`;
+
+  const contactRows = [
+    { icon: Mail, label: contactInfo.supportEmail, href: `mailto:${contactInfo.supportEmail}` },
+    { icon: Phone, label: contactInfo.phone, href: `tel:${contactInfo.phone}` },
+    ...(whatsappNumber
+      ? [{ icon: MessageCircle, label: `WhatsApp: ${whatsappNumber}`, href: `https://wa.me/${whatsappNumber}` }]
+      : []),
+    { icon: MapPin, label: businessAddress.full, href: undefined },
+  ];
+
   return (
     <footer className="border-t border-border-light bg-gradient-to-b from-bg-dashboard via-blush-light/20 to-bg-dashboard shadow-[0_-4px_24px_-16px_rgba(47,47,47,0.08)]">
       <div aria-hidden="true" className="h-1 bg-gradient-to-r from-blush via-blush-hover to-warm-yellow" />
@@ -54,16 +71,14 @@ export function Footer() {
               {siteConfig.name}
             </span>
           </div>
-          <p className="max-w-xs text-sm leading-[170%] text-text-secondary">
-            {siteConfig.description}
-          </p>
+          <p className="max-w-xs text-sm leading-[170%] text-text-secondary">{footerText}</p>
           <a
-            href={socialLinks.instagram.url}
+            href={instagramUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="flex w-fit items-center gap-2 rounded-full bg-background px-3.5 py-2 text-sm text-text-secondary shadow-soft transition-all duration-[300ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:text-blush-hover hover:shadow-soft-md"
           >
-            <InstagramIcon className="size-4" />@{socialLinks.instagram.username}
+            <InstagramIcon className="size-4" />@{instagramUsername}
           </a>
         </div>
 
@@ -132,9 +147,7 @@ export function Footer() {
 
       <div className="border-t border-divider py-6">
         <Container>
-          <p className="text-center text-sm tracking-[0.2px] text-text-muted">
-            © {new Date().getFullYear()} {siteConfig.name}. All rights reserved.
-          </p>
+          <p className="text-center text-sm tracking-[0.2px] text-text-muted">{copyrightText}</p>
         </Container>
       </div>
     </footer>
