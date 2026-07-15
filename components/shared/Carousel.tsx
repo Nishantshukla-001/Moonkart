@@ -123,7 +123,7 @@ export function Carousel({
             tabIndex={0}
             onKeyDown={handleKeyDown}
             onScroll={measure}
-            className="flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain touch-pan-x scroll-smooth pb-1 outline-none select-none sm:gap-5 [-ms-overflow-style:none] [scrollbar-width:none] focus-visible:ring-3 focus-visible:ring-ring/50 [&::-webkit-scrollbar]:hidden"
+            className="flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain touch-pan-x scroll-smooth pb-1 outline-none select-none contain-[layout_paint] sm:gap-5 [-ms-overflow-style:none] [scrollbar-width:none] focus-visible:ring-3 focus-visible:ring-ring/50 [&::-webkit-scrollbar]:hidden"
           >
             {Array.isArray(children)
               ? children.map((child, index) => (

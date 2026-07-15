@@ -66,10 +66,9 @@ export function ProductFilters({
   );
 
   return (
-    <aside className="flex w-full flex-col gap-6 lg:w-64 lg:shrink-0">
-      <div className="flex items-center justify-between">
-        <h2 className="font-heading text-lg font-semibold text-text-primary">Filters</h2>
-        {hasActiveFilters && (
+    <div className="flex w-full flex-col gap-6">
+      {hasActiveFilters && (
+        <div className="flex items-center justify-end">
           <button
             type="button"
             onClick={clearFilters}
@@ -77,8 +76,8 @@ export function ProductFilters({
           >
             Clear all
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {!hideCategoryFilter && categories.length > 0 && (
         <div className="flex flex-col gap-3">
@@ -153,6 +152,6 @@ export function ProductFilters({
           Apply
         </Button>
       </div>
-    </aside>
+    </div>
   );
 }
