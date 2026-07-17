@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 const conditions = [
-  { icon: PackageX, text: "The product received is defective." },
+  { icon: PackageX, text: "If product is 90% damaged." },
   { icon: Video, text: "Unboxing video is required from the beginning of opening the parcel." },
   { icon: AlertCircle, text: "A continuous 360° unboxing video without cuts is mandatory." },
 ];

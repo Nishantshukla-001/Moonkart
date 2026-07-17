@@ -6,7 +6,10 @@ import type { CategoryInput, UpdateCategoryInput } from "@/features/categories/v
 export function getCategories(options: { includeInactive?: boolean } = {}) {
   return prisma.category.findMany({
     where: options.includeInactive ? undefined : { isActive: true },
-    include: { subCategories: { where: { isActive: true } }, _count: { select: { products: true } } },
+    include: {
+      subCategories: { where: { isActive: true }, orderBy: { name: "asc" } },
+      _count: { select: { products: true } },
+    },
     orderBy: { name: "asc" },
   });
 }

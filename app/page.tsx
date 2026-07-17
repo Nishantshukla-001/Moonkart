@@ -58,7 +58,7 @@ export default async function HomePage() {
     instagramPosts,
   ] = await Promise.all([
     getHomepageContent(),
-    getFeaturedCategoriesForHomepage(6),
+    getFeaturedCategoriesForHomepage(12),
     getFeaturedSubCategoriesForHomepage(8),
     getCategories(),
     getCategoryBySlug("moon-essentials"),
@@ -72,12 +72,28 @@ export default async function HomePage() {
   // actually curates them on a fresh install, fall back to the plain
   // category list so these sections keep showing real content instead of
   // vanishing — exactly how they behaved before the curation feature existed.
+  function toSubCategoryLinks(category: { slug: string; subCategories: { id: string; name: string; slug: string }[] }) {
+    return category.subCategories.map((subCategory) => ({
+      id: subCategory.id,
+      name: subCategory.name,
+      href: `${ROUTES.category(category.slug)}?subCategory=${subCategory.slug}`,
+    }));
+  }
+
   const categoriesToShow =
     featuredCategories.length > 0
-      ? featuredCategories.map(({ id, category }) => ({ id, category, href: undefined as string | undefined }))
-      : allCategories
-          .slice(0, 6)
-          .map((category) => ({ id: category.id, category, href: undefined as string | undefined }));
+      ? featuredCategories.map(({ id, category }) => ({
+          id,
+          category,
+          href: undefined as string | undefined,
+          subCategoryLinks: toSubCategoryLinks(category),
+        }))
+      : allCategories.slice(0, 6).map((category) => ({
+          id: category.id,
+          category,
+          href: undefined as string | undefined,
+          subCategoryLinks: toSubCategoryLinks(category),
+        }));
 
   const subCategoriesToShow =
     featuredSubCategories.length > 0
@@ -124,17 +140,23 @@ export default async function HomePage() {
                 />
               </Reveal>
 
-              <Reveal
-                stagger
-                className="grid grid-cols-2 gap-5 sm:gap-6 md:grid-cols-3 lg:grid-cols-6"
-              >
-                {categoriesToShow.map(({ id, category, href }) => (
-                  <RevealItem key={id}>
+              {/* flex-wrap + justify-center (not a fixed-column grid) so an
+                  incomplete last row of cards centers itself instead of
+                  hanging left with large empty tracks on the right — the
+                  per-breakpoint widths below reproduce the same 2/3/6-up
+                  sizing the old grid used, gap included. */}
+              <Reveal stagger className="flex flex-wrap justify-center gap-5 sm:gap-6">
+                {categoriesToShow.map(({ id, category, href, subCategoryLinks }) => (
+                  <RevealItem
+                    key={id}
+                    className="w-[calc(50%-0.625rem)] sm:w-[calc(50%-0.75rem)] md:w-[calc(33.333%-1rem)] lg:w-[calc(16.666%-1.25rem)]"
+                  >
                     <FeaturedCategoryCard
                       name={category.name}
                       slug={category.slug}
                       image={category.image || placeholderImage(category.slug, 600, 750)}
                       href={href}
+                      subCategories={subCategoryLinks}
                     />
                   </RevealItem>
                 ))}

@@ -137,6 +137,9 @@ export function HomepageContentForm({ content }: { content: IHomepageContent }) 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
               <Label>Hero Banner Image (desktop)</Label>
+              <p className="text-xs text-text-muted">
+                Recommended: a wide landscape banner, around 1920×800px.
+              </p>
               {heroImageUrl && (
                 // eslint-disable-next-line @next/next/no-img-element -- Cloudinary URL, not registered in next/image remotePatterns
                 <img src={heroImageUrl} alt="Hero banner" className="h-24 w-full rounded-lg border border-border-light object-cover" />
@@ -151,6 +154,10 @@ export function HomepageContentForm({ content }: { content: IHomepageContent }) 
             </div>
             <div className="flex flex-col gap-2">
               <Label>Hero Banner Image (mobile)</Label>
+              <p className="text-xs text-text-muted">
+                Recommended: a separate portrait image, around 1080×1350px (or 1080×1920px) — don&apos;t
+                reuse the desktop banner, rearrange the collage vertically instead.
+              </p>
               {heroMobileImageUrl && (
                 // eslint-disable-next-line @next/next/no-img-element -- Cloudinary URL, not registered in next/image remotePatterns
                 <img src={heroMobileImageUrl} alt="Mobile hero banner" className="h-24 w-full rounded-lg border border-border-light object-cover" />

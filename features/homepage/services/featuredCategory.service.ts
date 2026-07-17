@@ -8,11 +8,19 @@ import type {
 
 // --- Featured Categories (homepage "Featured Categories" grid) -------------
 
-/** Storefront query — visible entries only, and only for categories still active. */
+/**
+ * Storefront query — visible entries only, and only for categories still
+ * active. Includes each category's active subcategories so the homepage
+ * grid can render subcategory chips under categories that have them.
+ */
 export function getFeaturedCategoriesForHomepage(limit = 6) {
   return prisma.featuredCategory.findMany({
     where: { isVisible: true, category: { isActive: true } },
-    include: { category: true },
+    include: {
+      category: {
+        include: { subCategories: { where: { isActive: true }, orderBy: { name: "asc" } } },
+      },
+    },
     orderBy: { displayOrder: "asc" },
     take: limit,
   });

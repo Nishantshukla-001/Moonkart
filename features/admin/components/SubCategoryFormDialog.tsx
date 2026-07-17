@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
+import { CloudinaryUploader } from "@/components/shared/CloudinaryUploader";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -178,9 +179,17 @@ export function SubCategoryFormDialog({
               name="image"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Image URL</FormLabel>
+                  <FormLabel>Subcategory Image</FormLabel>
+                  {field.value && (
+                    // eslint-disable-next-line @next/next/no-img-element -- Cloudinary URL, not registered in next/image remotePatterns
+                    <img
+                      src={field.value}
+                      alt="Subcategory"
+                      className="h-24 w-full rounded-lg border border-border-light object-cover"
+                    />
+                  )}
                   <FormControl>
-                    <Input placeholder="https://…" {...field} />
+                    <CloudinaryUploader onUploaded={(result) => field.onChange(result.url)} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
