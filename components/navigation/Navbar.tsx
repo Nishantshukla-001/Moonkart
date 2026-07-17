@@ -47,6 +47,12 @@ const primaryNavLinks = [
 const navLinkClass =
   "relative whitespace-nowrap font-heading text-sm font-medium tracking-[0.3px] text-text-primary transition-colors duration-300 after:absolute after:-bottom-1.5 after:left-0 after:h-px after:w-0 after:bg-blush-hover after:transition-all after:duration-300 hover:text-blush-hover hover:after:w-full";
 
+// Mobile drawer only: Home/All Products stay above "Explore", the rest move
+// below the category list (client request) — desktop nav still maps
+// primaryNavLinks directly and is unaffected by this split.
+const mobileTopLinks = primaryNavLinks.slice(0, 2);
+const mobileBottomLinks = primaryNavLinks.slice(2);
+
 export function Navbar({ categories }: { categories: ICategory[] }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -183,7 +189,11 @@ export function Navbar({ categories }: { categories: ICategory[] }) {
               <div className="flex flex-col gap-4 px-4">
                 <SearchBar onSearch={handleSearch} />
                 <nav className="flex flex-col gap-1">
-                  {primaryNavLinks.map((link) => (
+                  {/* Home / All Products stay above Explore; About Us, Return &
+                      Refund Policy, and Contact Us move below the category
+                      list per client request — desktop nav order (primaryNavLinks
+                      itself) is untouched. */}
+                  {mobileTopLinks.map((link) => (
                     <Link
                       key={link.href}
                       href={link.href}
@@ -204,6 +214,16 @@ export function Navbar({ categories }: { categories: ICategory[] }) {
                       className="rounded-lg px-3 py-2.5 font-heading text-base font-medium text-text-primary transition-colors duration-[250ms] hover:bg-blush-light"
                     >
                       {category.name}
+                    </Link>
+                  ))}
+                  {mobileBottomLinks.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setMobileOpen(false)}
+                      className="rounded-lg px-3 py-2.5 font-heading text-base font-medium text-text-primary transition-colors duration-[250ms] hover:bg-blush-light"
+                    >
+                      {link.label}
                     </Link>
                   ))}
                 </nav>
