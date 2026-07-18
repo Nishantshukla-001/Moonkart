@@ -14,9 +14,9 @@ export const siteConfig = {
 } as const;
 
 export const contactInfo = {
-  email: "moonkart0314@gmail.com",
-  supportEmail: "moonkart0314@gmail.com",
-  customerCareEmail: "moonkart0314@gmail.com",
+  email: "moonkartinfo@gmail.com",
+  supportEmail: "moonkartinfo@gmail.com",
+  customerCareEmail: "moonkartinfo@gmail.com",
   phone: "+91 9953813719",
   whatsapp: "+91 9953813719",
 } as const;

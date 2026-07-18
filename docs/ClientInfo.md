@@ -28,15 +28,15 @@ Single-Vendor E-Commerce Fashion & Lifestyle Store
 
 ## Official Email
 
-moonkart0314@gmail.com
+moonkartinfo@gmail.com
 
 ## Support Email
 
-moonkart0314@gmail.com
+moonkartinfo@gmail.com
 
 ## Customer Care Email
 
-moonkart0314@gmail.com
+moonkartinfo@gmail.com
 
 ## Phone Number
 
@@ -132,7 +132,7 @@ Pending
 
 Support Email
 
-moonkart0314@gmail.com
+moonkartinfo@gmail.com
 
 Phone
 
@@ -150,7 +150,7 @@ MoonKart
 
 Email
 
-moonkart0314@gmail.com
+moonkartinfo@gmail.com
 
 Phone
 
@@ -203,7 +203,7 @@ Single-Vendor E-Commerce Store
 
 Business Email
 
-moonkart0314@gmail.com
+moonkartinfo@gmail.com
 
 Business Phone
 
