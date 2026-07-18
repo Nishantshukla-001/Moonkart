@@ -11,15 +11,12 @@ function image(seed: string, w = 800, h = 800) {
 }
 
 async function main() {
+  // Fine Jewellery, Beauty & Skincare, Bags & Accessories, Footwear, and
+  // Home & Lifestyle were removed from the live catalog (client doesn't
+  // sell these) — dropped from seed data too so re-seeding a fresh database
+  // never recreates them. Apparel is untouched.
   const categories = await Promise.all(
-    [
-      { name: "Fine Jewellery", slug: "fine-jewellery" },
-      { name: "Beauty & Skincare", slug: "beauty-skincare" },
-      { name: "Apparel", slug: "apparel" },
-      { name: "Bags & Accessories", slug: "bags-accessories" },
-      { name: "Footwear", slug: "footwear" },
-      { name: "Home & Lifestyle", slug: "home-lifestyle" },
-    ].map((c) =>
+    [{ name: "Apparel", slug: "apparel" }].map((c) =>
       prisma.category.upsert({
         where: { slug: c.slug },
         create: { ...c, image: image(`moonkart-cat-${c.slug}`, 600, 450) },
@@ -27,23 +24,17 @@ async function main() {
       })
     )
   );
-  const [jewellery, beauty, apparel, bags, footwear, home] = categories;
+  const [apparel] = categories;
 
   const subCategories = await Promise.all(
     [
-      { name: "Earrings", slug: "earrings", categoryId: jewellery.id },
-      { name: "Necklaces", slug: "necklaces", categoryId: jewellery.id },
-      { name: "Skincare", slug: "skincare", categoryId: beauty.id },
-      { name: "Makeup", slug: "makeup", categoryId: beauty.id },
       { name: "Dresses", slug: "dresses", categoryId: apparel.id },
       { name: "Tops", slug: "tops", categoryId: apparel.id },
-      { name: "Handbags", slug: "handbags", categoryId: bags.id },
-      { name: "Heels", slug: "heels", categoryId: footwear.id },
     ].map((s) =>
       prisma.subCategory.upsert({ where: { slug: s.slug }, create: s, update: {} })
     )
   );
-  const [earrings, necklaces, skincare, makeup, dresses, tops, handbags, heels] = subCategories;
+  const [dresses, tops] = subCategories;
 
   const brands = await Promise.all(
     [
@@ -59,84 +50,11 @@ async function main() {
       })
     )
   );
-  const [signature, lumiere, velora, petal] = brands;
+  // Only Velora is used below now — the other three brands still seed fine,
+  // they just aren't referenced by any remaining (Apparel-only) product.
+  const [, , velora] = brands;
 
   const products = [
-    {
-      name: "Pearl Drop Earrings",
-      slug: "pearl-drop-earrings",
-      categoryId: jewellery.id,
-      subCategoryId: earrings.id,
-      brandId: signature.id,
-      price: 2499,
-      salePrice: 1899,
-      stock: 40,
-      isFeatured: true,
-      isBestSeller: false,
-      shortDescription: "Freshwater pearl drops on gold-plated hooks.",
-    },
-    {
-      name: "Rose Gold Layered Necklace",
-      slug: "rose-gold-layered-necklace",
-      categoryId: jewellery.id,
-      subCategoryId: necklaces.id,
-      brandId: signature.id,
-      price: 2299,
-      stock: 25,
-      isFeatured: true,
-      shortDescription: "Three-layer rose gold chain necklace.",
-    },
-    {
-      name: "Crystal Charm Bracelet",
-      slug: "crystal-charm-bracelet",
-      categoryId: jewellery.id,
-      brandId: lumiere.id,
-      price: 1499,
-      stock: 60,
-      shortDescription: "Delicate charm bracelet with crystal accents.",
-    },
-    {
-      name: "Gold Plated Hoop Earrings",
-      slug: "gold-plated-hoop-earrings",
-      categoryId: jewellery.id,
-      subCategoryId: earrings.id,
-      brandId: signature.id,
-      price: 1299,
-      stock: 80,
-      isBestSeller: true,
-      shortDescription: "Classic everyday hoops, hypoallergenic.",
-    },
-    {
-      name: "Matte Velvet Lipstick Duo",
-      slug: "matte-velvet-lipstick-duo",
-      categoryId: beauty.id,
-      subCategoryId: makeup.id,
-      brandId: petal.id,
-      price: 899,
-      stock: 100,
-      isBestSeller: true,
-      shortDescription: "Two long-wear matte shades in one set.",
-    },
-    {
-      name: "Hydrating Glow Serum",
-      slug: "hydrating-glow-serum",
-      categoryId: beauty.id,
-      subCategoryId: skincare.id,
-      brandId: petal.id,
-      price: 1199,
-      stock: 70,
-      isFeatured: true,
-      shortDescription: "Vitamin C serum for a natural glow.",
-    },
-    {
-      name: "Rose Petal Candle Set",
-      slug: "rose-petal-candle-set",
-      categoryId: home.id,
-      price: 999,
-      stock: 45,
-      isBestSeller: true,
-      shortDescription: "Set of 3 soy candles, rose petal scent.",
-    },
     {
       name: "Silk Wrap Blouse",
       slug: "silk-wrap-blouse",
@@ -171,50 +89,6 @@ async function main() {
         { size: "M", color: "Champagne", stock: 7, isDefault: true },
         { size: "L", color: "Champagne", stock: 4 },
         { size: "M", color: "Black", stock: 5 },
-      ],
-    },
-    {
-      name: "Quilted Chain Sling Bag",
-      slug: "quilted-chain-sling-bag",
-      categoryId: bags.id,
-      subCategoryId: handbags.id,
-      brandId: lumiere.id,
-      price: 2799,
-      stock: 22,
-      isFeatured: true,
-      shortDescription: "Quilted sling bag with gold chain strap.",
-    },
-    {
-      name: "Cashmere Blend Scarf",
-      slug: "cashmere-blend-scarf",
-      categoryId: bags.id,
-      brandId: velora.id,
-      price: 1799,
-      stock: 50,
-      shortDescription: "Soft cashmere-blend scarf, four colourways.",
-      hasVariants: true,
-      variants: [
-        { color: "Camel", stock: 15, isDefault: true },
-        { color: "Charcoal", stock: 15 },
-        { color: "Blush", stock: 10 },
-        { color: "Ivory", stock: 10 },
-      ],
-    },
-    {
-      name: "Embroidered Mules",
-      slug: "embroidered-mules",
-      categoryId: footwear.id,
-      subCategoryId: heels.id,
-      brandId: signature.id,
-      price: 2199,
-      stock: 28,
-      hasVariants: true,
-      shortDescription: "Hand-embroidered block-heel mules.",
-      variants: [
-        { size: "6", stock: 5 },
-        { size: "7", stock: 8, isDefault: true },
-        { size: "8", stock: 8 },
-        { size: "9", stock: 7 },
       ],
     },
   ];

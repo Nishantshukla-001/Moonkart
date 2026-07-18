@@ -6,7 +6,6 @@ import { FeaturedCategoryCard } from "@/components/categories/FeaturedCategoryCa
 import { Container } from "@/components/layout/Container";
 import { HeroBanner } from "@/components/shared/HeroBanner";
 import { HomepageBackground } from "@/components/shared/HomepageBackground";
-import { InstagramGallery } from "@/components/shared/InstagramGallery";
 import { NewsletterSection } from "@/components/shared/NewsletterSection";
 import { PromoBanner } from "@/components/shared/PromoBanner";
 import { Reveal, RevealItem } from "@/components/shared/Reveal";
@@ -21,7 +20,6 @@ import {
   getFeaturedSubCategoriesForHomepage,
 } from "@/features/homepage/services/featuredCategory.service";
 import { getHomepageContent } from "@/features/homepage/services/homepageContent.service";
-import { getVisibleInstagramPosts } from "@/features/instagram/services/instagramPost.service";
 import {
   getBestSellers,
   getNewArrivals,
@@ -55,7 +53,6 @@ export default async function HomePage() {
     moonEssentialsCategory,
     newArrivalProducts,
     bestSellerProducts,
-    instagramPosts,
   ] = await Promise.all([
     getHomepageContent(),
     getFeaturedCategoriesForHomepage(12),
@@ -64,7 +61,6 @@ export default async function HomePage() {
     getCategoryBySlug("moon-essentials"),
     getNewArrivals(8),
     getBestSellers(8),
-    getVisibleInstagramPosts(8),
   ]);
 
   // Featured Categories/Moon Essentials are admin-curated (order + visibility
@@ -176,12 +172,16 @@ export default async function HomePage() {
                 />
               </Reveal>
 
-              <Reveal
-                stagger
-                className="grid grid-cols-2 gap-5 sm:gap-6 md:grid-cols-4"
-              >
+              {/* flex-wrap + justify-center (not a fixed-column grid) — see the
+                  Featured Categories section above for why: an incomplete
+                  row (e.g. only 2 cards) centers itself instead of hanging
+                  left with a large empty gap on the right. */}
+              <Reveal stagger className="flex flex-wrap justify-center gap-5 sm:gap-6">
                 {subCategoriesToShow.map(({ id, subCategory, href }) => (
-                  <RevealItem key={id}>
+                  <RevealItem
+                    key={id}
+                    className="w-[calc(50%-0.625rem)] sm:w-[calc(50%-0.75rem)] md:w-[calc(25%-1.125rem)]"
+                  >
                     <FeaturedCategoryCard
                       name={subCategory.name}
                       slug={subCategory.slug}
@@ -252,14 +252,6 @@ export default async function HomePage() {
               </Reveal>
             </Container>
           </section>
-        )}
-
-        {content.followOurStyleIsVisible && (
-          <InstagramGallery
-            images={instagramPosts.map((post) => post.imageUrl)}
-            title={content.followOurStyleTitle}
-            instagramUsername={content.instagramUsername ?? undefined}
-          />
         )}
 
         {content.newsletterIsVisible && (

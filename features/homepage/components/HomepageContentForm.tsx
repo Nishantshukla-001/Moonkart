@@ -471,47 +471,6 @@ export function HomepageContentForm({ content }: { content: IHomepageContent }) 
           />
         </div>
 
-        {/* Follow Our Style */}
-        <div className="flex flex-col gap-4 border-t border-divider pt-5">
-          <h3 className="font-heading text-base font-semibold text-text-primary">Follow Our Style</h3>
-          <FormField
-            control={form.control}
-            name="followOurStyleTitle"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Section Title</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="instagramUsername"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Instagram Username</FormLabel>
-                <FormControl>
-                  <Input placeholder="_moonkart" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="followOurStyleIsVisible"
-            render={({ field }) => (
-              <SectionVisibilityRow id="follow-our-style-visible" checked={field.value} onCheckedChange={field.onChange} />
-            )}
-          />
-          <p className="text-xs text-text-muted">
-            Images, image order, and the Instagram link are managed from the Follow Our Style page.
-          </p>
-        </div>
-
         {/* New Arrivals */}
         <div className="flex flex-col gap-4 border-t border-divider pt-5">
           <h3 className="font-heading text-base font-semibold text-text-primary">New Arrivals</h3>

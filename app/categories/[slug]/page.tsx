@@ -36,7 +36,11 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   const { slug } = await params;
   const category = await getCategoryBySlug(slug);
 
-  if (!category || !category.isActive) notFound();
+  // Inactive categories are deliberately excluded from nav/homepage/filters
+  // (getCategories() filters isActive), but the page itself still resolves
+  // so existing links to their products (breadcrumbs, bookmarks, search
+  // engines) never 404 — only discovery is hidden, not direct access.
+  if (!category) notFound();
 
   const rawParams = await searchParams;
   const query = productQuerySchema.parse({ ...rawParams, category: slug });
