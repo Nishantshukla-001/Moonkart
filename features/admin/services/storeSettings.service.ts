@@ -2,7 +2,7 @@ import "server-only";
 
 import type { StoreSettings } from "@prisma/client";
 
-import { prisma } from "@/lib/prisma";
+import { prisma, safeRead } from "@/lib/prisma";
 import { destroyCloudinaryAsset } from "@/lib/cloudinary";
 import type { StoreSettingsInput } from "@/features/admin/validation/storeSettings.schema";
 
@@ -35,14 +35,18 @@ const DEFAULT_STORE_SETTINGS: StoreSettings = {
 };
 
 /**
- * Read-only — never writes. Falls back to in-memory schema defaults until an
- * admin explicitly saves the store settings form (see updateStoreSettings
- * below, which is the only place this row is ever created), so no page
- * render can trigger a database write.
+ * Read-only — never writes. Falls back to in-memory schema defaults both
+ * when the row hasn't been created yet (admin never saved the form — see
+ * updateStoreSettings below, the only place this row is created) and when
+ * the database is temporarily unreachable (e.g. P1001 during a build), so
+ * no page render or static build can ever crash on this call.
  */
 export async function getStoreSettings(): Promise<StoreSettings> {
-  const settings = await prisma.storeSettings.findUnique({ where: { id: SINGLETON_ID } });
-  return settings ?? DEFAULT_STORE_SETTINGS;
+  return safeRead(
+    async () => (await prisma.storeSettings.findUnique({ where: { id: SINGLETON_ID } })) ?? DEFAULT_STORE_SETTINGS,
+    DEFAULT_STORE_SETTINGS,
+    "getStoreSettings"
+  );
 }
 
 export async function updateStoreSettings(data: StoreSettingsInput) {

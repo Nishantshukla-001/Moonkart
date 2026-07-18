@@ -1,17 +1,27 @@
 import "server-only";
 
-import { prisma } from "@/lib/prisma";
+import { prisma, safeRead } from "@/lib/prisma";
 import type { CategoryInput, UpdateCategoryInput } from "@/features/categories/validation/category.schema";
 
+/**
+ * Called from the root layout (every route) and from the build-time
+ * sitemap generator, so a temporarily unreachable database must degrade to
+ * an empty list instead of crashing the build — see `safeRead`.
+ */
 export function getCategories(options: { includeInactive?: boolean } = {}) {
-  return prisma.category.findMany({
-    where: options.includeInactive ? undefined : { isActive: true },
-    include: {
-      subCategories: { where: { isActive: true }, orderBy: { name: "asc" } },
-      _count: { select: { products: true } },
-    },
-    orderBy: { name: "asc" },
-  });
+  return safeRead(
+    () =>
+      prisma.category.findMany({
+        where: options.includeInactive ? undefined : { isActive: true },
+        include: {
+          subCategories: { where: { isActive: true }, orderBy: { name: "asc" } },
+          _count: { select: { products: true } },
+        },
+        orderBy: { name: "asc" },
+      }),
+    [],
+    "getCategories"
+  );
 }
 
 /**

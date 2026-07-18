@@ -3,7 +3,7 @@ import "server-only";
 import type { HomepageContent } from "@prisma/client";
 
 import { destroyCloudinaryAsset } from "@/lib/cloudinary";
-import { prisma } from "@/lib/prisma";
+import { prisma, safeRead } from "@/lib/prisma";
 import type { HomepageContentInput } from "@/features/homepage/validation/homepageContent.schema";
 
 const SINGLETON_ID = "singleton";
@@ -68,14 +68,18 @@ const DEFAULT_HOMEPAGE_CONTENT: HomepageContent = {
 };
 
 /**
- * Read-only — never writes. Falls back to in-memory schema defaults until an
- * admin explicitly saves the homepage content form (see updateHomepageContent
- * below, which is the only place this row is ever created), so no page
- * render can trigger a database write.
+ * Read-only — never writes. Falls back to in-memory schema defaults both
+ * when the row hasn't been created yet (admin never saved the form — see
+ * updateHomepageContent below, the only place this row is created) and when
+ * the database is temporarily unreachable (e.g. P1001 during a build), so
+ * no page render or static build can ever crash on this call.
  */
 export async function getHomepageContent(): Promise<HomepageContent> {
-  const content = await prisma.homepageContent.findUnique({ where: { id: SINGLETON_ID } });
-  return content ?? DEFAULT_HOMEPAGE_CONTENT;
+  return safeRead(
+    async () => (await prisma.homepageContent.findUnique({ where: { id: SINGLETON_ID } })) ?? DEFAULT_HOMEPAGE_CONTENT,
+    DEFAULT_HOMEPAGE_CONTENT,
+    "getHomepageContent"
+  );
 }
 
 const IMAGE_PUBLIC_ID_FIELDS = [
