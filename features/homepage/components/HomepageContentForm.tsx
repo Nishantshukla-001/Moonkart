@@ -124,8 +124,6 @@ export function HomepageContentForm({ content }: { content: IHomepageContent }) 
 
   const heroImageUrl = form.watch("heroImageUrl");
   const heroMobileImageUrl = form.watch("heroMobileImageUrl");
-  const promoImageUrl = form.watch("promoImageUrl");
-  const promoMobileImageUrl = form.watch("promoMobileImageUrl");
 
   return (
     <Form {...form}>
@@ -358,117 +356,6 @@ export function HomepageContentForm({ content }: { content: IHomepageContent }) 
           <p className="text-xs text-text-muted">
             Manage which subcategories appear (and their order) in the card below.
           </p>
-        </div>
-
-        {/* Promotional Banner */}
-        <div className="flex flex-col gap-4 border-t border-divider pt-5">
-          <h3 className="font-heading text-base font-semibold text-text-primary">Promotional Banner</h3>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="flex flex-col gap-2">
-              <Label>Banner Image (desktop)</Label>
-              {promoImageUrl && (
-                // eslint-disable-next-line @next/next/no-img-element -- Cloudinary URL, not registered in next/image remotePatterns
-                <img src={promoImageUrl} alt="Promo banner" className="h-24 w-full rounded-lg border border-border-light object-cover" />
-              )}
-              <CloudinaryUploader
-                signUrl="/api/admin/cloudinary/sign"
-                onUploaded={(result: CloudinaryUploadResult) => {
-                  form.setValue("promoImageUrl", result.url, { shouldDirty: true });
-                  form.setValue("promoImagePublicId", result.publicId, { shouldDirty: true });
-                }}
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label>Banner Image (mobile)</Label>
-              {promoMobileImageUrl && (
-                // eslint-disable-next-line @next/next/no-img-element -- Cloudinary URL, not registered in next/image remotePatterns
-                <img src={promoMobileImageUrl} alt="Mobile promo banner" className="h-24 w-full rounded-lg border border-border-light object-cover" />
-              )}
-              <CloudinaryUploader
-                signUrl="/api/admin/cloudinary/sign"
-                onUploaded={(result: CloudinaryUploadResult) => {
-                  form.setValue("promoMobileImageUrl", result.url, { shouldDirty: true });
-                  form.setValue("promoMobileImagePublicId", result.publicId, { shouldDirty: true });
-                }}
-              />
-            </div>
-          </div>
-
-          <FormField
-            control={form.control}
-            name="promoEyebrow"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Eyebrow</FormLabel>
-                <FormControl>
-                  <Input placeholder="Limited Time" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="promoHeading"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Heading</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="promoSubheading"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Subheading</FormLabel>
-                <FormControl>
-                  <Textarea rows={2} {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="promoButtonText"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Button Text</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="promoButtonLink"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Button Link</FormLabel>
-                  <FormControl>
-                    <Input placeholder="/products" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-          <FormField
-            control={form.control}
-            name="promoIsVisible"
-            render={({ field }) => (
-              <SectionVisibilityRow id="promo-visible" checked={field.value} onCheckedChange={field.onChange} />
-            )}
-          />
         </div>
 
         {/* New Arrivals */}

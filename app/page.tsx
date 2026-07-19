@@ -7,7 +7,6 @@ import { Container } from "@/components/layout/Container";
 import { HeroBanner } from "@/components/shared/HeroBanner";
 import { HomepageBackground } from "@/components/shared/HomepageBackground";
 import { NewsletterSection } from "@/components/shared/NewsletterSection";
-import { PromoBanner } from "@/components/shared/PromoBanner";
 import { Reveal, RevealItem } from "@/components/shared/Reveal";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { TestimonialCard } from "@/components/shared/TestimonialCard";
@@ -202,18 +201,6 @@ export default async function HomePage() {
             products={newArrivalProducts}
             viewAllHref={`${ROUTES.products}?section=new-arrivals`}
             headingClassName={GRADIENT_HEADING_CLASS}
-          />
-        )}
-
-        {content.promoIsVisible && (
-          <PromoBanner
-            eyebrow={content.promoEyebrow ?? undefined}
-            heading={content.promoHeading || "Up to 30% Off Statement Jewellery"}
-            subheading={content.promoSubheading ?? undefined}
-            ctaLabel={content.promoButtonText || "Shop the Sale"}
-            ctaHref={content.promoButtonLink || ROUTES.products}
-            background={content.promoImageUrl || pinkTexture}
-            mobileBackground={content.promoMobileImageUrl}
           />
         )}
 
