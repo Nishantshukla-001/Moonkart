@@ -24,16 +24,10 @@ export default function AboutPage() {
           <Sparkles className="size-5 text-text-primary" aria-hidden="true" />
         </span>
 
-        <h2 className="font-heading text-xl font-semibold text-text-primary">Coming Soon...</h2>
-
         <p className="text-base leading-[170%] text-text-secondary">
-          We are currently preparing our story and brand journey.
-        </p>
-        <p className="text-base leading-[170%] text-text-secondary">
-          This page will be updated soon.
-        </p>
-        <p className="text-base leading-[170%] text-text-secondary">
-          Thank you for visiting MoonKart.
+          MoonKart is your destination for stylish beauty essentials, makeup, jewellery, and
+          accessories. We carefully curate every product to bring you quality, elegance, and
+          value in one place.
         </p>
       </Card>
     </Container>
