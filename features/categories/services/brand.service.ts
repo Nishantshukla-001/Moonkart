@@ -1,14 +1,20 @@
 import "server-only";
 
-import { prisma } from "@/lib/prisma";
+import { prisma, safeRead } from "@/lib/prisma";
 import type { BrandInput, UpdateBrandInput } from "@/features/categories/validation/brand.schema";
 
+/** Called from the build-time sitemap generator (app/sitemap.ts), so a temporarily unreachable database must degrade to an empty list instead of crashing the build — see `safeRead`. */
 export function getBrands(options: { includeInactive?: boolean } = {}) {
-  return prisma.brand.findMany({
-    where: options.includeInactive ? undefined : { isActive: true },
-    include: { _count: { select: { products: true } } },
-    orderBy: { name: "asc" },
-  });
+  return safeRead(
+    () =>
+      prisma.brand.findMany({
+        where: options.includeInactive ? undefined : { isActive: true },
+        include: { _count: { select: { products: true } } },
+        orderBy: { name: "asc" },
+      }),
+    [],
+    "getBrands"
+  );
 }
 
 export function getBrandBySlug(slug: string) {

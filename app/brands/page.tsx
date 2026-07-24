@@ -3,12 +3,20 @@ import type { Metadata } from "next";
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { Container } from "@/components/layout/Container";
 import { BrandCard } from "@/components/products/BrandCard";
+import { siteConfig } from "@/constants/config";
 import { getBrands } from "@/features/categories/services/brand.service";
 import { placeholderImage } from "@/lib/placeholderImages";
 
+const title = "Shop by Brand";
+const description = "Browse every brand available on MoonKart.";
+const url = `${siteConfig.url}/brands`;
+
 export const metadata: Metadata = {
-  title: "Shop by Brand",
-  description: "Browse every brand available on MoonKart.",
+  title,
+  description,
+  alternates: { canonical: url },
+  openGraph: { type: "website", title: `${title} | ${siteConfig.name}`, description, url },
+  twitter: { card: "summary", title: `${title} | ${siteConfig.name}`, description },
 };
 
 export default async function BrandsPage() {

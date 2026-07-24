@@ -3,12 +3,20 @@ import type { Metadata } from "next";
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { Container } from "@/components/layout/Container";
 import { CategoryCard } from "@/components/categories/CategoryCard";
+import { siteConfig } from "@/constants/config";
 import { getCategories } from "@/features/categories/services/category.service";
 import { placeholderImage } from "@/lib/placeholderImages";
 
+const title = "Shop by Category";
+const description = "Browse every MoonKart category.";
+const url = `${siteConfig.url}/categories`;
+
 export const metadata: Metadata = {
-  title: "Shop by Category",
-  description: "Browse every MoonKart category.",
+  title,
+  description,
+  alternates: { canonical: url },
+  openGraph: { type: "website", title: `${title} | ${siteConfig.name}`, description, url },
+  twitter: { card: "summary", title: `${title} | ${siteConfig.name}`, description },
 };
 
 export default async function CategoriesPage() {

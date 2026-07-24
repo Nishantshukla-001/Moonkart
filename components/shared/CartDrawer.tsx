@@ -84,7 +84,7 @@ export function CartDrawer({
                     <div className="flex items-center gap-2">
                       <Button
                         variant="outline"
-                        size="icon-xs"
+                        size="icon"
                         onClick={() => onDecreaseQuantity?.(item.id)}
                         aria-label="Decrease quantity"
                       >
@@ -95,7 +95,7 @@ export function CartDrawer({
                       </span>
                       <Button
                         variant="outline"
-                        size="icon-xs"
+                        size="icon"
                         onClick={() => onIncreaseQuantity?.(item.id)}
                         aria-label="Increase quantity"
                       >

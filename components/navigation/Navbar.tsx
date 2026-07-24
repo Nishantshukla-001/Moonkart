@@ -113,7 +113,9 @@ export function Navbar({ categories }: { categories: ICategory[] }) {
           </Link>
 
           <DropdownMenu>
-            <DropdownMenuTrigger className={cn(navLinkClass, "flex items-center gap-1 outline-none")}>
+            <DropdownMenuTrigger
+              className={cn(navLinkClass, "flex items-center gap-1 rounded-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50")}
+            >
               Explore
               <ChevronDown className="size-3.5" />
             </DropdownMenuTrigger>

@@ -7,7 +7,7 @@ const badgeConfig: Record<ProductBadgeType, { label: string; className: string }
   sale: { label: "Sale", className: "bg-badge-sale/90 text-text-primary" },
   trending: { label: "Trending", className: "bg-badge-trending/90 text-text-primary" },
   exclusive: { label: "Exclusive", className: "bg-badge-exclusive/90 text-text-primary" },
-  limited: { label: "Limited Edition", className: "bg-badge-limited/90 text-white" },
+  limited: { label: "Limited Edition", className: "bg-badge-limited/90 text-text-primary" },
 };
 
 interface ProductBadgeProps {

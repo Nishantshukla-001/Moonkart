@@ -146,8 +146,16 @@ export function Footer({ storeSettings, homepageContent }: FooterProps) {
       </Container>
 
       <div className="border-t border-divider py-6">
-        <Container>
+        <Container className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
           <p className="text-center text-sm tracking-[0.2px] text-text-muted">{copyrightText}</p>
+          <nav className="flex items-center gap-4 text-sm text-text-muted">
+            <Link href={ROUTES.privacyPolicy} className="transition-colors hover:text-blush-hover">
+              Privacy Policy
+            </Link>
+            <Link href={ROUTES.termsAndConditions} className="transition-colors hover:text-blush-hover">
+              Terms &amp; Conditions
+            </Link>
+          </nav>
         </Container>
       </div>
     </footer>

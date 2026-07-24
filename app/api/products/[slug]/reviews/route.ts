@@ -11,8 +11,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const product = await getProductBySlug(slug);
   if (!product) return apiError("Product not found.", [], 404);
 
-  const query = reviewQuerySchema.parse(Object.fromEntries(request.nextUrl.searchParams.entries()));
-  const result = await getReviewsForProduct(product.id, query);
+  const parsed = reviewQuerySchema.safeParse(Object.fromEntries(request.nextUrl.searchParams.entries()));
+  if (!parsed.success) {
+    return apiError(
+      "Invalid query parameters.",
+      parsed.error.issues.map((issue) => issue.message),
+      422
+    );
+  }
+
+  const result = await getReviewsForProduct(product.id, parsed.data);
   return apiSuccess(result, "Reviews fetched.");
 }
 

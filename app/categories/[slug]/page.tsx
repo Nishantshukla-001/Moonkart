@@ -8,6 +8,7 @@ import { siteConfig } from "@/constants/config";
 import { getCategoryBySlug } from "@/features/categories/services/category.service";
 import { ProductListingResults } from "@/features/products/components/ProductListingResults";
 import { productQuerySchema } from "@/features/products/validation/productQuery.schema";
+import { toJsonLd } from "@/lib/seo";
 
 interface CategoryPageProps {
   params: Promise<{ slug: string }>;
@@ -58,7 +59,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(breadcrumbJsonLd) }} />
       <Container className="pt-8">
         <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "Categories", href: "/categories" }, { label: category.name }]} />
         <h1 className="mt-4 text-3xl font-bold tracking-tight text-text-primary sm:text-[32px]">

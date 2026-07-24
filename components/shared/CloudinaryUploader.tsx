@@ -37,7 +37,7 @@ async function uploadOneFile(
   const signJson = await signRes.json();
   if (!signJson.success) throw new Error(signJson.message || "Could not start upload.");
 
-  const { timestamp, signature, apiKey, cloudName, folder } = signJson.data;
+  const { timestamp, signature, apiKey, cloudName, folder, allowedFormats } = signJson.data;
 
   const formData = new FormData();
   formData.append("file", file);
@@ -45,6 +45,7 @@ async function uploadOneFile(
   formData.append("timestamp", String(timestamp));
   formData.append("signature", signature);
   formData.append("folder", folder);
+  formData.append("allowed_formats", allowedFormats);
 
   return new Promise<CloudinaryUploadResult>((resolve, reject) => {
     const xhr = new XMLHttpRequest();

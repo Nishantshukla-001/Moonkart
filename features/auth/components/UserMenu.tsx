@@ -1,6 +1,7 @@
 "use client";
 
 import { LogOut, ShieldCheck, User as UserIcon } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -50,12 +51,11 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-blush font-heading text-sm font-semibold text-text-primary outline-none transition-transform duration-[250ms] hover:scale-105"
+        className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-blush font-heading text-sm font-semibold text-text-primary outline-none transition-transform duration-[250ms] hover:scale-105 focus-visible:ring-3 focus-visible:ring-ring/50"
         aria-label="Account menu"
       >
         {profile.avatar ? (
-          // eslint-disable-next-line @next/next/no-img-element -- Cloudinary URL, not registered in next/image remotePatterns
-          <img src={profile.avatar} alt="" className="size-full object-cover" />
+          <Image src={profile.avatar} alt="" fill sizes="40px" className="object-cover" />
         ) : (
           <>
             {profile.firstName[0]}

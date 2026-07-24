@@ -72,22 +72,27 @@ export function AddressFormDialog({ open, onOpenChange, address, onSaved }: Addr
 
   async function onSubmit(values: AddressInput) {
     setIsSubmitting(true);
-    const response = await fetch(address ? `/api/addresses/${address.id}` : "/api/addresses", {
-      method: address ? "PUT" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(values),
-    });
-    const result = await response.json();
-    setIsSubmitting(false);
+    try {
+      const response = await fetch(address ? `/api/addresses/${address.id}` : "/api/addresses", {
+        method: address ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+      const result = await response.json();
 
-    if (!result.success || !result.data) {
-      toast.error(result.message || "Could not save address.");
-      return;
+      if (!result.success || !result.data) {
+        toast.error(result.message || "Could not save address.");
+        return;
+      }
+
+      toast.success(address ? "Address updated." : "Address added.");
+      onSaved(result.data);
+      onOpenChange(false);
+    } catch {
+      toast.error("Could not reach the server. Check your connection and try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    toast.success(address ? "Address updated." : "Address added.");
-    onSaved(result.data);
-    onOpenChange(false);
   }
 
   return (

@@ -48,20 +48,25 @@ export function StoreSettingsForm({ settings }: { settings: StoreSettings }) {
 
   async function onSubmit(values: StoreSettingsInput) {
     setIsSubmitting(true);
-    const response = await fetch("/api/admin/settings", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(values),
-    });
-    const json = await response.json();
-    setIsSubmitting(false);
+    try {
+      const response = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+      const json = await response.json();
 
-    if (!json.success) {
-      toast.error(json.message || "Could not save store settings.");
-      return;
+      if (!json.success) {
+        toast.error(json.message || "Could not save store settings.");
+        return;
+      }
+      toast.success("Store settings saved.");
+      form.reset(toDefaults(json.data));
+    } catch {
+      toast.error("Could not reach the server. Check your connection and try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-    toast.success("Store settings saved.");
-    form.reset(toDefaults(json.data));
   }
 
   const logoUrl = form.watch("logoUrl");

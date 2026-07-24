@@ -6,10 +6,16 @@ import { syncSupabaseUserRole } from "@/lib/auth";
 import { apiError, apiSuccess } from "@/lib/apiResponse";
 import { mapSupabaseAuthError } from "@/lib/authErrors";
 import { prisma } from "@/lib/prisma";
+import { getClientIp, rateLimit } from "@/lib/rateLimit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
+  const { allowed, retryAfterSeconds } = rateLimit(`register:${getClientIp(request)}`, 5, 60_000);
+  if (!allowed) {
+    return apiError(`Too many signup attempts. Try again in ${retryAfterSeconds}s.`, [], 429);
+  }
+
   const body = await request.json().catch(() => null);
   if (!body) {
     return apiError("Invalid request body.", [], 400);

@@ -4,11 +4,17 @@ import { placeOrder } from "@/features/orders/services/order.service";
 import { placeOrderSchema } from "@/features/orders/validation/order.schema";
 import { getCurrentUser } from "@/lib/auth";
 import { apiError, apiSuccess } from "@/lib/apiResponse";
+import { rateLimit } from "@/lib/rateLimit";
 
 export async function POST(request: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return apiError("Not authenticated.", [], 401);
   if (!user.isActive) return apiError("This account is deactivated.", [], 403);
+
+  const { allowed, retryAfterSeconds } = rateLimit(`checkout:${user.id}`, 5, 60_000);
+  if (!allowed) {
+    return apiError(`Too many checkout attempts. Try again in ${retryAfterSeconds}s.`, [], 429);
+  }
 
   const body = await request.json().catch(() => null);
   if (!body) return apiError("Invalid request body.", [], 400);

@@ -2,12 +2,22 @@ import type { Metadata } from "next";
 
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { Container } from "@/components/layout/Container";
+import { siteConfig } from "@/constants/config";
 import { ProductListingResults } from "@/features/products/components/ProductListingResults";
 import { productQuerySchema } from "@/features/products/validation/productQuery.schema";
 
+const title = "Shop All Products";
+const description = "Browse the full MoonKart catalog of jewellery, beauty, apparel, and lifestyle products.";
+const url = `${siteConfig.url}/products`;
+
 export const metadata: Metadata = {
-  title: "Shop All Products",
-  description: "Browse the full MoonKart catalog of jewellery, beauty, apparel, and lifestyle products.",
+  title,
+  description,
+  // Canonical stays fixed at /products regardless of ?category=/?sort=/?page=
+  // filters, so those variants aren't treated as duplicate content.
+  alternates: { canonical: url },
+  openGraph: { type: "website", title, description, url },
+  twitter: { card: "summary", title, description },
 };
 
 interface ProductsPageProps {

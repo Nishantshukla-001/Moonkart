@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
@@ -16,43 +17,52 @@ export function AvatarUploadForm({ user }: { user: IUser }) {
 
   async function handleUploaded(result: CloudinaryUploadResult) {
     setIsSaving(true);
-    const response = await fetch("/api/profile/avatar", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ avatarUrl: result.url, avatarPublicId: result.publicId }),
-    });
-    const json = await response.json();
-    setIsSaving(false);
+    try {
+      const response = await fetch("/api/profile/avatar", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ avatarUrl: result.url, avatarPublicId: result.publicId }),
+      });
+      const json = await response.json();
 
-    if (!json.success) {
-      toast.error(json.message || "Could not update your profile photo.");
-      return;
+      if (!json.success) {
+        toast.error(json.message || "Could not update your profile photo.");
+        return;
+      }
+      toast.success("Profile photo updated.");
+      await refreshProfile();
+    } catch {
+      toast.error("Could not reach the server. Check your connection and try again.");
+    } finally {
+      setIsSaving(false);
     }
-    toast.success("Profile photo updated.");
-    await refreshProfile();
   }
 
   async function handleRemove() {
     setIsRemoving(true);
-    const response = await fetch("/api/profile/avatar", { method: "DELETE" });
-    const json = await response.json();
-    setIsRemoving(false);
+    try {
+      const response = await fetch("/api/profile/avatar", { method: "DELETE" });
+      const json = await response.json();
 
-    if (!json.success) {
-      toast.error(json.message || "Could not remove your profile photo.");
-      return;
+      if (!json.success) {
+        toast.error(json.message || "Could not remove your profile photo.");
+        return;
+      }
+      toast.success("Profile photo removed.");
+      await refreshProfile();
+    } catch {
+      toast.error("Could not reach the server. Check your connection and try again.");
+    } finally {
+      setIsRemoving(false);
     }
-    toast.success("Profile photo removed.");
-    await refreshProfile();
   }
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-4">
-        <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-blush font-heading text-lg font-semibold text-text-primary">
+        <div className="relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-blush font-heading text-lg font-semibold text-text-primary">
           {user.avatar ? (
-            // eslint-disable-next-line @next/next/no-img-element -- Cloudinary URL, not registered in next/image remotePatterns
-            <img src={user.avatar} alt="" className="size-full object-cover" />
+            <Image src={user.avatar} alt="" fill sizes="64px" className="object-cover" />
           ) : (
             <>
               {user.firstName[0]}

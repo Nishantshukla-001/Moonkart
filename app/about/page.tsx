@@ -3,10 +3,18 @@ import { Sparkles } from "lucide-react";
 
 import { Container } from "@/components/layout/Container";
 import { Card } from "@/components/ui/card";
+import { siteConfig } from "@/constants/config";
+
+const title = "About Us";
+const description = siteConfig.description;
+const url = `${siteConfig.url}/about`;
 
 export const metadata: Metadata = {
-  title: "About Us",
-  description: "About MoonKart.",
+  title,
+  description,
+  alternates: { canonical: url },
+  openGraph: { type: "website", title: `${title} | ${siteConfig.name}`, description, url },
+  twitter: { card: "summary", title: `${title} | ${siteConfig.name}`, description },
 };
 
 export default function AboutPage() {

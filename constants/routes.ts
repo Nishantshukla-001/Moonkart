@@ -40,4 +40,6 @@ export const ROUTES = {
   contact: "/contact",
   about: "/about",
   returnPolicy: "/return-refund-policy",
+  privacyPolicy: "/privacy-policy",
+  termsAndConditions: "/terms-and-conditions",
 } as const;

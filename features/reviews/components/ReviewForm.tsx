@@ -48,33 +48,38 @@ export function ReviewForm({ productSlug, existingReview, onSaved, onCancel }: R
 
   async function onSubmit(values: ReviewInput) {
     setIsSubmitting(true);
-    const payload = {
-      ...values,
-      images: images.map((image) => ({ imageUrl: image.url, publicId: image.publicId })),
-    };
+    try {
+      const payload = {
+        ...values,
+        images: images.map((image) => ({ imageUrl: image.url, publicId: image.publicId })),
+      };
 
-    const response = existingReview
-      ? await fetch(`/api/reviews/${existingReview.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        })
-      : await fetch(`/api/products/${productSlug}/reviews`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
+      const response = existingReview
+        ? await fetch(`/api/reviews/${existingReview.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          })
+        : await fetch(`/api/products/${productSlug}/reviews`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
 
-    const result = await response.json();
-    setIsSubmitting(false);
+      const result = await response.json();
 
-    if (!result.success || !result.data) {
-      toast.error(result.message || "Could not submit review.");
-      return;
+      if (!result.success || !result.data) {
+        toast.error(result.message || "Could not submit review.");
+        return;
+      }
+
+      toast.success(existingReview ? "Review updated." : "Review submitted.");
+      onSaved(result.data);
+    } catch {
+      toast.error("Could not reach the server. Check your connection and try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    toast.success(existingReview ? "Review updated." : "Review submitted.");
-    onSaved(result.data);
   }
 
   return (
@@ -133,9 +138,9 @@ export function ReviewForm({ productSlug, existingReview, onSaved, onCancel }: R
                     type="button"
                     onClick={() => handleRemoveImage(image.publicId)}
                     aria-label="Remove photo"
-                    className="absolute top-0.5 right-0.5 flex size-5 items-center justify-center rounded-full bg-black/60 text-white"
+                    className="absolute top-0.5 right-0.5 flex size-7 items-center justify-center rounded-full bg-black/60 text-white"
                   >
-                    <X className="size-3" />
+                    <X className="size-3.5" />
                   </button>
                 </div>
               ))}

@@ -1,11 +1,13 @@
 import "./globals.css";
 
+import { unstable_cache } from "next/cache";
+
 import { SiteChrome } from "@/components/layout/SiteChrome";
 import { contactInfo, siteConfig, socialLinks } from "@/constants/config";
 import { getCategories } from "@/features/categories/services/category.service";
 import { getStoreSettings } from "@/features/admin/services/storeSettings.service";
 import { getHomepageContent } from "@/features/homepage/services/homepageContent.service";
-import { defaultMetadata } from "@/lib/seo";
+import { defaultMetadata, toJsonLd } from "@/lib/seo";
 import { inter, poppins } from "@/lib/fonts";
 import { Providers } from "@/providers/Providers";
 
@@ -23,21 +25,36 @@ const organizationJsonLd = {
   sameAs: [socialLinks.instagram.url],
 };
 
+// The root layout wraps every route, so these 3 reads previously ran on
+// every single page view. Cached with a 60s window (matching the homepage's
+// own ISR interval) rather than tag-based invalidation — admin edits to
+// categories/store settings/homepage content may take up to 60s to appear
+// in the nav/footer/announcement bar specifically, while the homepage's own
+// content still updates immediately via its existing revalidatePath("/").
+const getCachedLayoutChrome = unstable_cache(
+  async () => {
+    const [categories, storeSettings, homepageContent] = await Promise.all([
+      getCategories(),
+      getStoreSettings(),
+      getHomepageContent(),
+    ]);
+    return { categories, storeSettings, homepageContent };
+  },
+  ["root-layout-chrome"],
+  { revalidate: 60 }
+);
+
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [categories, storeSettings, homepageContent] = await Promise.all([
-    getCategories(),
-    getStoreSettings(),
-    getHomepageContent(),
-  ]);
+  const { categories, storeSettings, homepageContent } = await getCachedLayoutChrome();
 
   return (
     <html lang="en" className={`${poppins.variable} ${inter.variable}`} suppressHydrationWarning>
       <body className="flex min-h-screen flex-col antialiased">
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(organizationJsonLd) }} />
         <Providers>
           <SiteChrome categories={categories} storeSettings={storeSettings} homepageContent={homepageContent}>
             {children}

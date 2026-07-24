@@ -11,6 +11,13 @@ cloudinary.config({
 
 export const CLOUDINARY_UPLOAD_FOLDER = "moonkart";
 
+// Restricts every signed upload to real image formats — SVG is deliberately
+// excluded because it can embed executable script, and this is enforced
+// server-side (as part of the signed params) so it can't be bypassed by a
+// client sending its own upload request, unlike the `accept="image/*"` input
+// attribute which is only a client-side hint.
+const ALLOWED_UPLOAD_FORMATS = "jpg,jpeg,png,webp,gif";
+
 /**
  * Signs a direct browser-to-Cloudinary upload so the API secret never
  * reaches the client. The browser then POSTs the file straight to
@@ -20,7 +27,7 @@ export const CLOUDINARY_UPLOAD_FOLDER = "moonkart";
 export function signUpload(paramsToSign: Record<string, string | number>) {
   const timestamp = Math.round(Date.now() / 1000);
   const signature = cloudinary.utils.api_sign_request(
-    { ...paramsToSign, timestamp, folder: CLOUDINARY_UPLOAD_FOLDER },
+    { ...paramsToSign, timestamp, folder: CLOUDINARY_UPLOAD_FOLDER, allowed_formats: ALLOWED_UPLOAD_FORMATS },
     process.env.CLOUDINARY_API_SECRET!
   );
 
@@ -30,6 +37,7 @@ export function signUpload(paramsToSign: Record<string, string | number>) {
     apiKey: process.env.CLOUDINARY_API_KEY,
     cloudName: process.env.CLOUDINARY_CLOUD_NAME,
     folder: CLOUDINARY_UPLOAD_FOLDER,
+    allowedFormats: ALLOWED_UPLOAD_FORMATS,
   };
 }
 

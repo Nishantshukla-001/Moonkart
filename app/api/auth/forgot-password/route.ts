@@ -2,9 +2,15 @@ import type { NextRequest } from "next/server";
 
 import { forgotPasswordSchema } from "@/features/auth/validation/auth.schema";
 import { apiError, apiSuccess } from "@/lib/apiResponse";
+import { getClientIp, rateLimit } from "@/lib/rateLimit";
 import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
+  const { allowed, retryAfterSeconds } = rateLimit(`forgot-password:${getClientIp(request)}`, 5, 60_000);
+  if (!allowed) {
+    return apiError(`Too many requests. Try again in ${retryAfterSeconds}s.`, [], 429);
+  }
+
   const body = await request.json().catch(() => null);
   if (!body) {
     return apiError("Invalid request body.", [], 400);

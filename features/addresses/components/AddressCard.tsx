@@ -75,7 +75,7 @@ export function AddressCard({
           type="button"
           onClick={onSelect}
           aria-pressed={selected}
-          className="flex flex-col gap-0 text-left outline-none"
+          className="flex flex-col gap-0 rounded-md text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           {content}
         </button>

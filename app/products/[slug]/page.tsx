@@ -17,6 +17,7 @@ import { ReviewsSection } from "@/features/reviews/components/ReviewsSection";
 import { getRatingBreakdown } from "@/features/reviews/services/review.service";
 import { getEffectivePrice } from "@/features/products/utils";
 import { siteConfig } from "@/constants/config";
+import { toJsonLd } from "@/lib/seo";
 import { calculateDiscountPercent } from "@/utils/calculateDiscount";
 import { formatCurrency } from "@/utils/formatCurrency";
 
@@ -113,8 +114,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   return (
     <>
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} />
-    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(productJsonLd) }} />
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(breadcrumbJsonLd) }} />
     <TrackRecentlyViewed
       productId={product.id}
       name={product.name}

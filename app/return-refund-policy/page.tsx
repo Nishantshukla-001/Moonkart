@@ -3,10 +3,18 @@ import { AlertCircle, PackageX, Video } from "lucide-react";
 
 import { Container } from "@/components/layout/Container";
 import { Card } from "@/components/ui/card";
+import { siteConfig } from "@/constants/config";
+
+const title = "Return & Refund Policy";
+const description = "MoonKart's return and refund policy.";
+const url = `${siteConfig.url}/return-refund-policy`;
 
 export const metadata: Metadata = {
-  title: "Return & Refund Policy",
-  description: "MoonKart's return and refund policy.",
+  title,
+  description,
+  alternates: { canonical: url },
+  openGraph: { type: "website", title: `${title} | ${siteConfig.name}`, description, url },
+  twitter: { card: "summary", title: `${title} | ${siteConfig.name}`, description },
 };
 
 const conditions = [

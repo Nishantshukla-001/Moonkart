@@ -112,6 +112,13 @@ export default async function HomePage() {
           approach didn't guarantee that. */}
       <HomepageBackground />
 
+      {/* Visually hidden — the hero banner below is a single image with no
+          text of its own (see HeroBanner's doc comment), so without this the
+          homepage has zero <h1> anywhere, which is a real SEO/accessibility
+          gap even though every section heading below is a correctly-nested
+          <h2>. */}
+      <h1 className="sr-only">MoonKart — Premium Fashion, Jewellery & Beauty Marketplace</h1>
+
       <div className="relative z-10">
         {content.heroIsVisible && (
           <section className="pt-10 pb-10 sm:pt-14 sm:pb-14">

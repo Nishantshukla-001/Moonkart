@@ -10,7 +10,12 @@ export const siteConfig = {
   businessType: "Multi-Vendor E-Commerce Fashion & Lifestyle Marketplace",
   description:
     "MoonKart is a premium multi-vendor fashion and lifestyle marketplace offering a fast, secure, and elegant online shopping experience.",
-  url: "https://moonkart.example.com",
+  // Reuses the same NEXT_PUBLIC_SITE_URL already set for auth email redirect
+  // links (see app/api/auth/**/route.ts) — set it to the real production
+  // domain before launch. Every canonical tag, Open Graph/Twitter URL,
+  // sitemap entry, and JSON-LD `url` field is derived from this value, so
+  // leaving it on the placeholder breaks all of them at once.
+  url: process.env.NEXT_PUBLIC_SITE_URL || "https://moonkart.example.com",
 } as const;
 
 export const contactInfo = {

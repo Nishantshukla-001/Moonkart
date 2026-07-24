@@ -23,20 +23,25 @@ export function AnnouncementForm() {
 
   async function onSubmit(values: AnnouncementInput) {
     setIsSubmitting(true);
-    const response = await fetch("/api/admin/announcements", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(values),
-    });
-    const json = await response.json();
-    setIsSubmitting(false);
+    try {
+      const response = await fetch("/api/admin/announcements", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+      const json = await response.json();
 
-    if (!json.success) {
-      toast.error(json.message || "Could not send announcement.");
-      return;
+      if (!json.success) {
+        toast.error(json.message || "Could not send announcement.");
+        return;
+      }
+      toast.success(json.message);
+      form.reset(emptyDefaults);
+    } catch {
+      toast.error("Could not reach the server. Check your connection and try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-    toast.success(json.message);
-    form.reset(emptyDefaults);
   }
 
   return (

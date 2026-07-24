@@ -44,21 +44,26 @@ export function ProfileForm({ user }: { user: IUser }) {
 
   async function onSubmit(values: ProfileFormInput) {
     setIsSubmitting(true);
-    const response = await fetch("/api/profile", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(values),
-    });
-    const result = await response.json();
-    setIsSubmitting(false);
+    try {
+      const response = await fetch("/api/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+      const result = await response.json();
 
-    if (!result.success) {
-      toast.error(result.message);
-      return;
+      if (!result.success) {
+        toast.error(result.message);
+        return;
+      }
+
+      toast.success("Profile updated.");
+      await refreshProfile();
+    } catch {
+      toast.error("Could not reach the server. Check your connection and try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    toast.success("Profile updated.");
-    await refreshProfile();
   }
 
   return (

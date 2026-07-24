@@ -4,11 +4,17 @@ import { loginSchema } from "@/features/auth/validation/auth.schema";
 import { apiError, apiSuccess } from "@/lib/apiResponse";
 import { mapSupabaseAuthError } from "@/lib/authErrors";
 import { prisma } from "@/lib/prisma";
+import { getClientIp, rateLimit } from "@/lib/rateLimit";
 import { createClient } from "@/lib/supabase/server";
 
 const REMEMBER_ME_MAX_AGE = 400 * 24 * 60 * 60; // library default (persistent)
 
 export async function POST(request: NextRequest) {
+  const { allowed, retryAfterSeconds } = rateLimit(`login:${getClientIp(request)}`, 10, 60_000);
+  if (!allowed) {
+    return apiError(`Too many login attempts. Try again in ${retryAfterSeconds}s.`, [], 429);
+  }
+
   const body = await request.json().catch(() => null);
   if (!body) {
     return apiError("Invalid request body.", [], 400);

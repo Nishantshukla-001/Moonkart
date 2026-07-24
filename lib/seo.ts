@@ -2,6 +2,16 @@ import type { Metadata } from "next";
 
 import { siteConfig } from "@/constants/config";
 
+/**
+ * Escapes `<` so a JSON-LD payload embedded via `dangerouslySetInnerHTML`
+ * can never break out of its `<script>` tag — plain `JSON.stringify` does
+ * not escape `<`, so an admin-entered value containing `</script>` would
+ * otherwise inject arbitrary HTML/JS into every visitor's page.
+ */
+export function toJsonLd(data: unknown): string {
+  return JSON.stringify(data).replace(/</g, "\\u003c");
+}
+
 export const defaultMetadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
