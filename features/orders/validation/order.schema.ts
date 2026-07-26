@@ -6,6 +6,15 @@ export const placeOrderSchema = z.object({
 
 export type PlaceOrderInput = z.infer<typeof placeOrderSchema>;
 
+export const placeOrderFromRazorpaySchema = z.object({
+  addressId: z.uuid("Select a shipping address"),
+  razorpay_order_id: z.string().trim().min(1, "razorpay_order_id is required."),
+  razorpay_payment_id: z.string().trim().min(1, "razorpay_payment_id is required."),
+  razorpay_signature: z.string().trim().min(1, "razorpay_signature is required."),
+});
+
+export type PlaceOrderFromRazorpayInput = z.infer<typeof placeOrderFromRazorpaySchema>;
+
 export const orderStatusSchema = z.enum([
   "PENDING",
   "CONFIRMED",

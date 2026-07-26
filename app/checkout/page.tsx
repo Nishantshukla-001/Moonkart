@@ -13,5 +13,11 @@ export default async function CheckoutPage() {
   const user = await requireUser();
   const addresses = await getAddresses(user.id);
 
-  return <CheckoutClient addresses={addresses} />;
+  const customer = {
+    name: `${user.firstName} ${user.lastName}`.trim(),
+    email: user.email,
+    phone: user.phone ?? "",
+  };
+
+  return <CheckoutClient addresses={addresses} customer={customer} />;
 }

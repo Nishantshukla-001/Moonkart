@@ -50,7 +50,10 @@ export async function POST(request: NextRequest) {
       notes: { userId: user.id },
     });
 
-    return apiSuccess(order, "Razorpay order created.", 201);
+    // key_id is Razorpay's public identifier, not a secret — Checkout
+    // requires it client-side to open the payment widget, so it's included
+    // here rather than duplicating RAZORPAY_KEY_ID into a NEXT_PUBLIC_ var.
+    return apiSuccess({ ...order, key: process.env.RAZORPAY_KEY_ID }, "Razorpay order created.", 201);
   } catch (error) {
     console.error("Razorpay order creation failed:", error);
     return apiError("Could not create payment order. Please try again.", [], 502);

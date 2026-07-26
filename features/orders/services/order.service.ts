@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 import {
   createNotification,
@@ -232,6 +232,234 @@ export async function placeOrder(userId: string, addressId: string): Promise<Pla
       return { success: false, error: error.message };
     }
     throw error;
+  }
+}
+
+export type PlaceOrderFromRazorpayResult =
+  | { success: true; order: NonNullable<Awaited<ReturnType<typeof getOrderById>>>; alreadyExisted: boolean }
+  | { success: false; error: string };
+
+interface PlaceOrderFromRazorpayPaymentParams {
+  userId: string;
+  addressId: string;
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
+}
+
+/**
+ * Finalizes an Order after a Razorpay payment has already been verified
+ * (signature checked by the caller). Deliberately mirrors `placeOrder`'s
+ * transaction rather than sharing it — this path starts from money already
+ * captured by Razorpay, so it is kept as a self-contained flow instead of
+ * risking a shared-helper change touching the live COD checkout path.
+ *
+ * Idempotent on `razorpayPaymentId`: a matching Order is looked up before
+ * touching the cart, and the column also carries a DB-level unique
+ * constraint, so a retried request, a refreshed success page, or a genuine
+ * concurrent race can never produce two Orders for one Razorpay payment —
+ * the loser of the race is caught below and returns the winner's Order
+ * instead of erroring.
+ */
+export async function placeOrderFromRazorpayPayment({
+  userId,
+  addressId,
+  razorpayOrderId,
+  razorpayPaymentId,
+}: PlaceOrderFromRazorpayPaymentParams): Promise<PlaceOrderFromRazorpayResult> {
+  const existing = await prisma.order.findUnique({ where: { razorpayPaymentId } });
+  if (existing) {
+    const order = await getOrderById(userId, existing.id);
+    if (!order) return { success: false, error: "Order not found." };
+    return { success: true, order, alreadyExisted: true };
+  }
+
+  const address = await prisma.address.findFirst({ where: { id: addressId, userId } });
+  if (!address) return { success: false, error: "Selected address not found." };
+
+  const cart = await prisma.cart.findUnique({
+    where: { userId },
+    include: { items: { include: { product: true, variant: true } } },
+  });
+  if (!cart || cart.items.length === 0) {
+    return { success: false, error: "Your cart is empty." };
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) return { success: false, error: "User not found." };
+
+  try {
+    const orderId = await prisma.$transaction(async (tx) => {
+      // Re-check idempotency inside the transaction to close the race
+      // window between the pre-check above and this transaction starting.
+      const dupe = await tx.order.findUnique({ where: { razorpayPaymentId } });
+      if (dupe) return dupe.id;
+
+      await tx.cart.update({ where: { id: cart.id }, data: { updatedAt: new Date() } });
+
+      const freshCartItems = await tx.cartItem.findMany({
+        where: { cartId: cart.id },
+        include: { product: true, variant: true },
+      });
+      if (freshCartItems.length === 0) {
+        throw new CheckoutError("Your cart is empty.");
+      }
+
+      let subtotal = 0;
+      const itemsData: Prisma.OrderItemCreateManyOrderInput[] = [];
+
+      for (const line of freshCartItems) {
+        const product = await tx.product.findUnique({ where: { id: line.productId } });
+        if (!product || !product.isPublished) {
+          throw new CheckoutError(`"${line.product.name}" is no longer available.`);
+        }
+
+        let variant: Prisma.ProductVariantGetPayload<object> | null = null;
+        if (line.variantId) {
+          variant = await tx.productVariant.findFirst({
+            where: { id: line.variantId, productId: product.id },
+          });
+          if (!variant) {
+            throw new CheckoutError(`A selected option for "${product.name}" is no longer available.`);
+          }
+        }
+
+        const availableStock = variant ? variant.stock : product.stock;
+        if (availableStock < line.quantity) {
+          throw new CheckoutError(
+            availableStock > 0
+              ? `Only ${availableStock} left of "${product.name}" — reduce the quantity to continue.`
+              : `"${product.name}" is out of stock.`
+          );
+        }
+
+        if (variant) {
+          const updated = await tx.productVariant.updateMany({
+            where: { id: variant.id, stock: { gte: line.quantity } },
+            data: { stock: { decrement: line.quantity } },
+          });
+          if (updated.count === 0) {
+            throw new CheckoutError(`"${product.name}" just sold out — please remove it from your cart.`);
+          }
+        } else {
+          const updated = await tx.product.updateMany({
+            where: { id: product.id, stock: { gte: line.quantity } },
+            data: { stock: { decrement: line.quantity } },
+          });
+          if (updated.count === 0) {
+            throw new CheckoutError(`"${product.name}" just sold out — please remove it from your cart.`);
+          }
+        }
+
+        const unitPrice = resolveUnitPrice(product, variant);
+        const lineTotal = unitPrice * line.quantity;
+        subtotal += lineTotal;
+
+        itemsData.push({
+          productId: product.id,
+          variantId: variant?.id ?? null,
+          productName: product.name,
+          productSlug: product.slug,
+          productImage: variant?.image ?? product.thumbnail,
+          sku: variant?.sku ?? product.sku ?? null,
+          variantLabel: variantLabel(variant),
+          unitPrice,
+          quantity: line.quantity,
+          lineTotal,
+        });
+      }
+
+      const discount = 0;
+      const shippingCharge = 0;
+      const tax = 0;
+      const totalAmount = subtotal - discount + shippingCharge + tax;
+
+      const orderNumber = await nextOrderNumber(tx);
+
+      const created = await tx.order.create({
+        data: {
+          orderNumber,
+          userId,
+          status: "PROCESSING",
+          paymentMethod: "RAZORPAY",
+          paymentStatus: "PAID",
+          razorpayOrderId,
+          razorpayPaymentId,
+          customerName: `${user.firstName} ${user.lastName}`.trim(),
+          customerEmail: user.email,
+          customerPhone: user.phone ?? address.phone,
+          addressId: address.id,
+          shippingFullName: address.fullName,
+          shippingPhone: address.phone,
+          shippingEmail: address.email,
+          shippingAddressLine1: address.addressLine1,
+          shippingAddressLine2: address.addressLine2,
+          shippingCity: address.city,
+          shippingState: address.state,
+          shippingCountry: address.country,
+          shippingPostalCode: address.postalCode,
+          shippingAddressType: address.addressType,
+          subtotal,
+          discount,
+          shippingCharge,
+          tax,
+          totalAmount,
+          items: { createMany: { data: itemsData } },
+        },
+      });
+
+      await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
+
+      return created.id;
+    });
+
+    const order = await getOrderById(userId, orderId);
+    if (!order) return { success: false, error: "Order not found after creation." };
+
+    // Best-effort — a notification failure should never fail a successful order.
+    await createNotification(
+      userId,
+      "ORDER_STATUS",
+      "Order placed!",
+      `Your order ${order.orderNumber} has been placed and is being processed.`,
+      `/orders/${order.id}`
+    ).catch(() => null);
+
+    return { success: true, order, alreadyExisted: false };
+  } catch (error) {
+    if (error instanceof CheckoutError) {
+      // The Razorpay payment has already succeeded at this point — losing
+      // the Order row here would silently lose a real, captured payment, so
+      // this is logged with everything needed to manually reconcile rather
+      // than treated as an ordinary validation failure.
+      console.error("Razorpay payment succeeded but order finalization failed:", {
+        userId,
+        razorpayOrderId,
+        razorpayPaymentId,
+        reason: error.message,
+      });
+      return { success: false, error: error.message };
+    }
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      // Lost a race to a concurrent request finalizing the same payment —
+      // that request's Order is the source of truth, not an error here.
+      const winner = await prisma.order.findUnique({ where: { razorpayPaymentId } });
+      if (winner) {
+        const order = await getOrderById(userId, winner.id);
+        if (order) return { success: true, order, alreadyExisted: true };
+      }
+    }
+
+    console.error("Razorpay payment succeeded but order finalization failed unexpectedly:", {
+      userId,
+      razorpayOrderId,
+      razorpayPaymentId,
+      error,
+    });
+    return {
+      success: false,
+      error: "Payment received, but we couldn't finalize your order automatically. Please contact support.",
+    };
   }
 }
 

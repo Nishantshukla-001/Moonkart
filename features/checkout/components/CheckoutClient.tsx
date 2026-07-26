@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Script from "next/script";
 import { toast } from "sonner";
 import { MapPin, Plus, ShoppingBag, Truck } from "lucide-react";
 
@@ -9,6 +10,7 @@ import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { Container } from "@/components/layout/Container";
 import { AspectImage } from "@/components/shared/AspectImage";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AddressCard } from "@/features/addresses/components/AddressCard";
@@ -17,8 +19,21 @@ import { ROUTES } from "@/constants/routes";
 import { useCart } from "@/hooks/useCart";
 import { formatCurrency } from "@/utils/formatCurrency";
 import type { IAddress } from "@/types/address";
+import type { RazorpayCheckoutOptions, RazorpayPaymentSuccessResponse } from "@/types/razorpay";
 
-export function CheckoutClient({ addresses: initialAddresses }: { addresses: IAddress[] }) {
+interface CheckoutCustomer {
+  name: string;
+  email: string;
+  phone: string;
+}
+
+export function CheckoutClient({
+  addresses: initialAddresses,
+  customer,
+}: {
+  addresses: IAddress[];
+  customer: CheckoutCustomer;
+}) {
   const router = useRouter();
   const items = useCart((state) => state.items);
   const subtotal = useCart((state) => state.subtotal);
@@ -31,6 +46,7 @@ export function CheckoutClient({ addresses: initialAddresses }: { addresses: IAd
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<IAddress | null>(null);
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [finalizationError, setFinalizationError] = useState<string | null>(null);
 
   const shippingCharge = 0;
   const discount = 0;
@@ -48,30 +64,114 @@ export function CheckoutClient({ addresses: initialAddresses }: { addresses: IAd
     setSelectedAddressId(address.id);
   }
 
+  async function verifyPayment(paymentResponse: RazorpayPaymentSuccessResponse) {
+    try {
+      const response = await fetch("/api/payments/razorpay/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(paymentResponse),
+      });
+      const result = await response.json();
+
+      if (!result.success || !result.data?.verified) {
+        toast.error(result.message || "Payment verification failed. Please contact support if the amount was deducted.");
+        setIsPlacingOrder(false);
+        return;
+      }
+
+      // Payment is verified — finalize the Order. If this fails, the
+      // Razorpay payment has still succeeded, so the shopper must never be
+      // sent back to "Pay Now" (that would charge them a second time).
+      // `finalizationError` replaces the button with a static message instead.
+      try {
+        const completeResponse = await fetch("/api/payments/razorpay/complete-order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ addressId: selectedAddressId, ...paymentResponse }),
+        });
+        const completeResult = await completeResponse.json();
+
+        if (!completeResult.success || !completeResult.data) {
+          setFinalizationError(
+            `Your payment (ID: ${paymentResponse.razorpay_payment_id}) was received, but we couldn't finalize your order automatically. Please contact support with this Payment ID — do not pay again.`
+          );
+          return;
+        }
+
+        await useCart.getState().clear();
+        router.push(ROUTES.checkoutSuccess(completeResult.data.orderNumber));
+      } catch {
+        setFinalizationError(
+          `Your payment (ID: ${paymentResponse.razorpay_payment_id}) was received, but we couldn't confirm your order due to a connection issue. Please contact support with this Payment ID — do not pay again.`
+        );
+      }
+    } catch {
+      toast.error("Could not verify payment. Please contact support if the amount was deducted.");
+      setIsPlacingOrder(false);
+    }
+  }
+
   async function handlePlaceOrder() {
     if (!selectedAddressId) {
       toast.error("Select a shipping address to continue.");
       return;
     }
-    if (items.length === 0) return;
+    if (items.length === 0 || isPlacingOrder) return;
+
+    const RazorpayCheckout = window.Razorpay;
+    if (!RazorpayCheckout) {
+      toast.error("Payment gateway is still loading. Please try again in a moment.");
+      return;
+    }
 
     setIsPlacingOrder(true);
     try {
-      const response = await fetch("/api/checkout", {
+      const response = await fetch("/api/payments/razorpay/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ addressId: selectedAddressId }),
+        body: JSON.stringify({
+          amount: Math.round(grandTotal * 100),
+          currency: "INR",
+          receipt: `receipt_${Date.now()}`,
+        }),
       });
       const result = await response.json();
 
       if (!result.success || !result.data) {
-        toast.error(result.message || "Could not place order.");
+        toast.error(result.message || "Could not start payment. Please try again.");
         setIsPlacingOrder(false);
         return;
       }
 
-      await useCart.getState().clear();
-      router.push(ROUTES.checkoutSuccess(result.data.orderNumber));
+      const razorpayOrder = result.data as { id: string; amount: number; currency: string; key: string };
+
+      const options: RazorpayCheckoutOptions = {
+        key: razorpayOrder.key,
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency,
+        name: "MoonKart",
+        description: "Order Payment",
+        order_id: razorpayOrder.id,
+        prefill: {
+          name: customer.name || undefined,
+          email: customer.email || undefined,
+          contact: customer.phone || undefined,
+        },
+        handler: (paymentResponse) => {
+          void verifyPayment(paymentResponse);
+        },
+        modal: {
+          // Fires when the shopper closes the Checkout overlay without
+          // completing payment — close gracefully rather than treating it
+          // as an error, since nothing has failed.
+          ondismiss: () => {
+            setIsPlacingOrder(false);
+            toast("Payment cancelled.");
+          },
+        },
+      };
+
+      new RazorpayCheckout(options).open();
     } catch {
       toast.error("Could not reach the server. Check your connection and try again.");
       setIsPlacingOrder(false);
@@ -80,6 +180,8 @@ export function CheckoutClient({ addresses: initialAddresses }: { addresses: IAd
 
   return (
     <Container className="flex flex-col gap-8 py-10 sm:py-12">
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" />
+
       <div>
         <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "Cart", href: ROUTES.cart }, { label: "Checkout" }]} />
         <h1 className="mt-4 text-3xl font-bold tracking-tight text-text-primary sm:text-[32px]">Checkout</h1>
@@ -151,7 +253,7 @@ export function CheckoutClient({ addresses: initialAddresses }: { addresses: IAd
               <div>
                 <h2 className="font-heading text-sm font-semibold text-text-primary">Delivery Details</h2>
                 <p className="text-sm text-text-secondary">
-                  Estimated delivery in 5–7 business days. Cash on Delivery available on this order.
+                  Estimated delivery in 5–7 business days. Secure payment powered by Razorpay.
                 </p>
               </div>
             </Card>
@@ -207,14 +309,21 @@ export function CheckoutClient({ addresses: initialAddresses }: { addresses: IAd
               <span>{formatCurrency(grandTotal)}</span>
             </div>
 
-            <Button
-              size="lg"
-              className="w-full"
-              onClick={handlePlaceOrder}
-              disabled={isPlacingOrder || !selectedAddressId}
-            >
-              {isPlacingOrder ? "Placing Order…" : "Place Order"}
-            </Button>
+            {finalizationError ? (
+              <Alert variant="destructive">
+                <AlertTitle>Payment received</AlertTitle>
+                <AlertDescription>{finalizationError}</AlertDescription>
+              </Alert>
+            ) : (
+              <Button
+                size="lg"
+                className="w-full"
+                onClick={handlePlaceOrder}
+                disabled={isPlacingOrder || !selectedAddressId}
+              >
+                {isPlacingOrder ? "Processing Payment…" : "Pay Now"}
+              </Button>
+            )}
           </Card>
         </div>
       )}

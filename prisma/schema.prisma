@@ -258,6 +258,8 @@ model Order {
   status               OrderStatus   @default(PENDING)
   paymentMethod        PaymentMethod @default(COD) @map("payment_method")
   paymentStatus        PaymentStatus @default(PENDING) @map("payment_status")
+  razorpayOrderId      String?       @unique @map("razorpay_order_id")
+  razorpayPaymentId    String?       @unique @map("razorpay_payment_id")
   customerName         String        @map("customer_name")
   customerEmail        String        @map("customer_email")
   customerPhone        String        @map("customer_phone")
@@ -389,6 +391,7 @@ enum PaymentStatus {
 
 enum PaymentMethod {
   COD
+  RAZORPAY
 }
 
 // ---------------------------------------------------------------------------
