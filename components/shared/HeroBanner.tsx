@@ -24,6 +24,11 @@ interface HeroBannerProps {
  * with `fill` + `object-contain`, so the box height always derives from the
  * image's ratio instead of a fixed px height, and the artwork is never
  * cropped or zoomed regardless of the exact pixels an admin uploads.
+ *
+ * Below `sm` (true phone widths), the mobile image instead renders in a
+ * landscape 16:9 box rather than the tall 1080:1350 portrait box — the
+ * portrait box is visually too tall on phones. `sm`–`lg` (tablet) keeps the
+ * original portrait box completely unchanged; `lg`+ (desktop) is untouched.
  */
 export function HeroBanner({ image, mobileImage, href, alt = "MoonKart Hero Banner" }: HeroBannerProps) {
   const hasDedicatedMobileImage = Boolean(mobileImage);
@@ -35,16 +40,28 @@ export function HeroBanner({ image, mobileImage, href, alt = "MoonKart Hero Bann
         className="group relative block overflow-hidden rounded-[32px] bg-white p-2 shadow-[0_0_0_6px_white,0_0_0_12px_var(--blush-light),0_24px_48px_-12px_rgba(239,198,209,0.55)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_0_6px_white,0_0_0_14px_var(--blush-hover),0_28px_56px_-12px_rgba(239,198,209,0.65)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:p-3"
       >
         {hasDedicatedMobileImage && (
-          <div className="relative aspect-[1080/1350] w-full overflow-hidden rounded-[22px] lg:hidden">
-            <Image
-              src={mobileImage!}
-              alt={alt}
-              priority
-              fill
-              sizes="100vw"
-              className="object-contain transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.01]"
-            />
-          </div>
+          <>
+            <div className="relative aspect-[16/9] w-full overflow-hidden rounded-[22px] sm:hidden">
+              <Image
+                src={mobileImage!}
+                alt={alt}
+                priority
+                fill
+                sizes="100vw"
+                className="object-contain transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.01]"
+              />
+            </div>
+            <div className="relative hidden aspect-[1080/1350] w-full overflow-hidden rounded-[22px] sm:block lg:hidden">
+              <Image
+                src={mobileImage!}
+                alt={alt}
+                priority
+                fill
+                sizes="100vw"
+                className="object-contain transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.01]"
+              />
+            </div>
+          </>
         )}
         <div
           className={cn(

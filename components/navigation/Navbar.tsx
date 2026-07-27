@@ -76,14 +76,17 @@ export function Navbar({ categories }: { categories: ICategory[] }) {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border-light/70 bg-background/90 shadow-soft backdrop-blur-md">
-      <Container className="relative flex h-24 items-center justify-between gap-4 py-3 lg:px-8 xl:px-10">
-        {/* Logo — left, generously spaced from everything else. */}
+      <Container className="relative flex h-28 items-center justify-between gap-4 py-3 sm:h-24 lg:px-8 xl:px-10">
+        {/* Logo — left, generously spaced from everything else. Slightly
+            larger on mobile only (size-[52px]/size-[42px] vs. the sm:+
+            size-11/size-9 that reproduces the original, unchanged desktop
+            size) so the mark reads clearly at the smallest widths. */}
         <Link
           href={ROUTES.home}
           className="flex shrink-0 items-center gap-3"
           aria-label={`${siteConfig.name} home`}
         >
-          <span className="relative flex size-11 shrink-0 items-center justify-center">
+          <span className="relative flex size-[52px] shrink-0 items-center justify-center sm:size-11">
             <span
               aria-hidden="true"
               className="absolute inset-0 rounded-full border-2 border-dashed border-blush-hover/50"
@@ -93,14 +96,16 @@ export function Navbar({ categories }: { categories: ICategory[] }) {
               alt={siteConfig.name}
               width={36}
               height={36}
-              className="rounded-full object-cover shadow-soft"
+              className="size-[42px] rounded-full object-cover shadow-soft sm:size-9"
               priority
             />
             <Ribbon aria-hidden="true" className="absolute -top-1 -right-1 size-4 rotate-12 text-blush-hover" />
           </span>
-          {/* Hidden below 400px — logo mark + icon cluster don't fit alongside
-              the full wordmark at the smallest supported widths (320–390px). */}
-          <span className="hidden font-heading text-lg font-bold tracking-[0.2px] text-text-primary min-[400px]:inline">
+          {/* Always visible on mobile (previously hidden below 400px) and
+              uppercased there to read as a compact wordmark next to the
+              now-larger logo — sm: and up reverts to the exact original
+              behavior (inline, mixed-case) at every wider breakpoint. */}
+          <span className="inline font-heading text-lg font-bold tracking-[0.2px] text-text-primary uppercase sm:normal-case">
             {siteConfig.name}
           </span>
         </Link>
