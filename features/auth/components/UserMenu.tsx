@@ -51,7 +51,10 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-blush font-heading text-sm font-semibold text-text-primary outline-none transition-transform duration-[250ms] hover:scale-105 focus-visible:ring-3 focus-visible:ring-ring/50"
+        // Slightly smaller on mobile only (size-9 vs. the sm:+ size-10 that
+        // reproduces the original, unchanged size) — this is the app's only
+        // usage of UserMenu, so the override can't affect anywhere else.
+        className="relative flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-blush font-heading text-sm font-semibold text-text-primary outline-none transition-transform duration-[250ms] hover:scale-105 focus-visible:ring-3 focus-visible:ring-ring/50 sm:size-10"
         aria-label="Account menu"
       >
         {profile.avatar ? (

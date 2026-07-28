@@ -66,7 +66,17 @@ export function NotificationBell() {
   return (
     <DropdownMenu onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger
-        render={<Button variant="ghost" size="icon" aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`} className="relative hover:text-blush-hover" />}
+        render={
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
+            // Slightly smaller on mobile only (size-9 vs. the sm:+ size-10 that
+            // reproduces the original, unchanged size) — this is the app's only
+            // usage of NotificationBell, so the override can't affect anywhere else.
+            className="relative size-9 hover:text-blush-hover sm:size-10"
+          />
+        }
       >
         {unreadCount > 0 ? <BellRing /> : <Bell />}
         {unreadCount > 0 && (

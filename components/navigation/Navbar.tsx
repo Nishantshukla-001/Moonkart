@@ -76,20 +76,18 @@ export function Navbar({ categories }: { categories: ICategory[] }) {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border-light/70 bg-background/90 shadow-soft backdrop-blur-md">
-      <Container className="relative flex h-28 items-center justify-between gap-4 py-3 sm:h-24 lg:px-8 xl:px-10">
+      <Container className="relative flex h-28 items-center justify-between gap-0.5 px-1.5 py-3 sm:h-24 sm:gap-4 sm:px-6 lg:px-8 xl:px-10">
         {/* Logo — left, generously spaced from everything else. Slightly
             larger on mobile only (size-[52px]/size-[42px] vs. the sm:+
             size-11/size-9 that reproduces the original, unchanged desktop
-            size) so the mark reads clearly at the smallest widths.
-            `min-w-0 shrink` (instead of `shrink-0`) let this whole group
-            compress on narrow phones — without it, the fixed-size icon
-            cluster plus the logo/text's full natural width can add up to
-            more than the viewport, pushing the header wider than the
-            screen and causing horizontal scroll. The round logo mark
-            itself keeps `shrink-0` so only the text ever gives up space. */}
+            size) so the mark reads clearly at the smallest widths. Wishlist
+            and Cart move into the mobile sidebar (below) instead of the
+            header icon row, which frees enough width for "MOONKART" to
+            always render in full — `shrink-0` here means the logo+text
+            group never shrinks or truncates. */}
         <Link
           href={ROUTES.home}
-          className="flex min-w-0 shrink items-center gap-3"
+          className="flex shrink-0 items-center gap-0.5 sm:gap-3"
           aria-label={`${siteConfig.name} home`}
         >
           <span className="relative flex size-[52px] shrink-0 items-center justify-center sm:size-11">
@@ -110,12 +108,10 @@ export function Navbar({ categories }: { categories: ICategory[] }) {
           {/* Always visible on mobile (previously hidden below 400px) and
               uppercased there to read as a compact wordmark next to the
               now-larger logo — sm: and up reverts to the exact original
-              behavior (mixed-case) at every wider breakpoint. `min-w-0
-              truncate` lets it ellipsize as a last resort on the narrowest
-              phones (320–360px, especially once signed in adds the avatar
-              + notification bell to the icon cluster) instead of forcing
-              the navbar wider than the viewport. */}
-          <span className="min-w-0 truncate font-heading text-lg font-bold tracking-[0.2px] text-text-primary uppercase sm:normal-case">
+              behavior (mixed-case) at every wider breakpoint. Never
+              truncated — `whitespace-nowrap` just guards against wrapping
+              to a second line. */}
+          <span className="font-heading text-lg font-bold whitespace-nowrap tracking-normal text-text-primary uppercase sm:tracking-[0.2px] sm:normal-case">
             {siteConfig.name}
           </span>
         </Link>
@@ -156,8 +152,11 @@ export function Navbar({ categories }: { categories: ICategory[] }) {
         {/* Icon cluster — far right, small and unobtrusive. `shrink-0` keeps
             every icon (including the avatar/notification bell that only
             appear once signed in) fully visible and correctly sized; the
-            logo/text group on the left is what gives up space instead. */}
-        <div className="ml-auto flex shrink-0 items-center gap-0.5">
+            logo/text group on the left is what gives up space instead.
+            Wishlist and Cart are hidden below `sm` — they move into the
+            mobile sidebar instead (see the Sheet content below) — and are
+            unchanged (still shown here) from `sm` up. */}
+        <div className="ml-auto flex shrink-0 items-center gap-0 sm:gap-0.5">
           <Button
             variant="ghost"
             size="icon-sm"
@@ -173,7 +172,7 @@ export function Navbar({ categories }: { categories: ICategory[] }) {
             variant="ghost"
             size="icon-sm"
             aria-label="Wishlist"
-            className="hover:text-blush"
+            className="hidden hover:text-blush sm:inline-flex"
             render={<Link href={ROUTES.wishlist} />}
           >
             <Heart />
@@ -182,7 +181,7 @@ export function Navbar({ categories }: { categories: ICategory[] }) {
             variant="ghost"
             size="icon-sm"
             aria-label={`Cart${itemCount > 0 ? ` (${itemCount} items)` : ""}`}
-            className="relative hover:text-blush-hover"
+            className="relative hidden hover:text-blush-hover sm:inline-flex"
             onClick={() => setDrawerOpen(true)}
           >
             <ShoppingBag />
@@ -209,6 +208,25 @@ export function Navbar({ categories }: { categories: ICategory[] }) {
               <div className="flex flex-col gap-4 px-4">
                 <SearchBar onSearch={handleSearch} />
                 <nav className="flex flex-col gap-1">
+                  {/* Wishlist and Cart live here instead of the mobile header's
+                      icon row (hidden there below `sm` — see the icon cluster
+                      above) so the header has room for the full "MOONKART"
+                      wordmark. Desktop/tablet keep both in the header, unchanged. */}
+                  <Link
+                    href={ROUTES.wishlist}
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-2 rounded-lg px-3 py-2.5 font-heading text-base font-medium text-text-primary transition-colors duration-[250ms] hover:bg-blush-light"
+                  >
+                    <Heart className="size-4" /> Wishlist
+                  </Link>
+                  <Link
+                    href={ROUTES.cart}
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-2 rounded-lg px-3 py-2.5 font-heading text-base font-medium text-text-primary transition-colors duration-[250ms] hover:bg-blush-light"
+                  >
+                    <ShoppingBag className="size-4" />
+                    Cart{itemCount > 0 ? ` (${itemCount > 9 ? "9+" : itemCount})` : ""}
+                  </Link>
                   {/* Home / All Products stay above Explore; About Us, Return &
                       Refund Policy, and Contact Us move below the category
                       list per client request — desktop nav order (primaryNavLinks
