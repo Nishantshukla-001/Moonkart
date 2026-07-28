@@ -4,7 +4,7 @@ import type { Prisma } from "@prisma/client";
 
 import { notifyWishlistersOfRestock } from "@/features/notifications/services/notification.service";
 import { destroyCloudinaryAsset } from "@/lib/cloudinary";
-import { prisma } from "@/lib/prisma";
+import { prisma, safeRead } from "@/lib/prisma";
 import type { ProductQuery } from "@/features/products/validation/productQuery.schema";
 import type {
   ProductImageInput,
@@ -131,22 +131,34 @@ export function getFeaturedProducts(limit = 8) {
   });
 }
 
+/** Called from the homepage render — ProductSection already renders an empty state when given `[]`, so a temporarily unreachable database degrades to that instead of crashing — see `safeRead`. */
 export function getNewArrivals(limit = 8) {
-  return prisma.product.findMany({
-    where: { isPublished: true },
-    include: publicProductInclude,
-    orderBy: { createdAt: "desc" },
-    take: limit,
-  });
+  return safeRead(
+    () =>
+      prisma.product.findMany({
+        where: { isPublished: true },
+        include: publicProductInclude,
+        orderBy: { createdAt: "desc" },
+        take: limit,
+      }),
+    [],
+    "getNewArrivals"
+  );
 }
 
+/** Called from the homepage render — see `getNewArrivals` above for why this needs the same safeRead degradation. */
 export function getBestSellers(limit = 8) {
-  return prisma.product.findMany({
-    where: { isPublished: true, isBestSeller: true },
-    include: publicProductInclude,
-    orderBy: { createdAt: "desc" },
-    take: limit,
-  });
+  return safeRead(
+    () =>
+      prisma.product.findMany({
+        where: { isPublished: true, isBestSeller: true },
+        include: publicProductInclude,
+        orderBy: { createdAt: "desc" },
+        take: limit,
+      }),
+    [],
+    "getBestSellers"
+  );
 }
 
 /** Rated by actual customer reviews, unlike `getBestSellers` which reflects the admin-curated `isBestSeller` flag. */

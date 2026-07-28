@@ -80,10 +80,16 @@ export function Navbar({ categories }: { categories: ICategory[] }) {
         {/* Logo — left, generously spaced from everything else. Slightly
             larger on mobile only (size-[52px]/size-[42px] vs. the sm:+
             size-11/size-9 that reproduces the original, unchanged desktop
-            size) so the mark reads clearly at the smallest widths. */}
+            size) so the mark reads clearly at the smallest widths.
+            `min-w-0 shrink` (instead of `shrink-0`) let this whole group
+            compress on narrow phones — without it, the fixed-size icon
+            cluster plus the logo/text's full natural width can add up to
+            more than the viewport, pushing the header wider than the
+            screen and causing horizontal scroll. The round logo mark
+            itself keeps `shrink-0` so only the text ever gives up space. */}
         <Link
           href={ROUTES.home}
-          className="flex shrink-0 items-center gap-3"
+          className="flex min-w-0 shrink items-center gap-3"
           aria-label={`${siteConfig.name} home`}
         >
           <span className="relative flex size-[52px] shrink-0 items-center justify-center sm:size-11">
@@ -104,8 +110,12 @@ export function Navbar({ categories }: { categories: ICategory[] }) {
           {/* Always visible on mobile (previously hidden below 400px) and
               uppercased there to read as a compact wordmark next to the
               now-larger logo — sm: and up reverts to the exact original
-              behavior (inline, mixed-case) at every wider breakpoint. */}
-          <span className="inline font-heading text-lg font-bold tracking-[0.2px] text-text-primary uppercase sm:normal-case">
+              behavior (mixed-case) at every wider breakpoint. `min-w-0
+              truncate` lets it ellipsize as a last resort on the narrowest
+              phones (320–360px, especially once signed in adds the avatar
+              + notification bell to the icon cluster) instead of forcing
+              the navbar wider than the viewport. */}
+          <span className="min-w-0 truncate font-heading text-lg font-bold tracking-[0.2px] text-text-primary uppercase sm:normal-case">
             {siteConfig.name}
           </span>
         </Link>
@@ -143,8 +153,11 @@ export function Navbar({ categories }: { categories: ICategory[] }) {
           ))}
         </nav>
 
-        {/* Icon cluster — far right, small and unobtrusive. */}
-        <div className="ml-auto flex items-center gap-0.5">
+        {/* Icon cluster — far right, small and unobtrusive. `shrink-0` keeps
+            every icon (including the avatar/notification bell that only
+            appear once signed in) fully visible and correctly sized; the
+            logo/text group on the left is what gives up space instead. */}
+        <div className="ml-auto flex shrink-0 items-center gap-0.5">
           <Button
             variant="ghost"
             size="icon-sm"

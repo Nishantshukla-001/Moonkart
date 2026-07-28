@@ -37,11 +37,17 @@ export function getCategoriesAdmin() {
   });
 }
 
+/** Also called from the homepage (Moon Essentials fallback) alongside `getCategories`, so it needs the same safeRead degradation — see `safeRead`. */
 export function getCategoryBySlug(slug: string) {
-  return prisma.category.findUnique({
-    where: { slug },
-    include: { subCategories: { where: { isActive: true } } },
-  });
+  return safeRead(
+    () =>
+      prisma.category.findUnique({
+        where: { slug },
+        include: { subCategories: { where: { isActive: true } } },
+      }),
+    null,
+    "getCategoryBySlug"
+  );
 }
 
 const adminCategoryInclude = {

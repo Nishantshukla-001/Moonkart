@@ -1,6 +1,6 @@
 import "server-only";
 
-import { prisma } from "@/lib/prisma";
+import { prisma, safeRead } from "@/lib/prisma";
 import type {
   UpdateFeaturedCategoryInput,
   UpdateFeaturedSubCategoryInput,
@@ -12,18 +12,27 @@ import type {
  * Storefront query — visible entries only, and only for categories still
  * active. Includes each category's active subcategories so the homepage
  * grid can render subcategory chips under categories that have them.
+ *
+ * Called from the homepage render, so a temporarily unreachable database
+ * must degrade to an empty list (the homepage already falls back to the
+ * plain category list when this is empty) instead of crashing — see `safeRead`.
  */
 export function getFeaturedCategoriesForHomepage(limit = 6) {
-  return prisma.featuredCategory.findMany({
-    where: { isVisible: true, category: { isActive: true } },
-    include: {
-      category: {
-        include: { subCategories: { where: { isActive: true }, orderBy: { name: "asc" } } },
-      },
-    },
-    orderBy: { displayOrder: "asc" },
-    take: limit,
-  });
+  return safeRead(
+    () =>
+      prisma.featuredCategory.findMany({
+        where: { isVisible: true, category: { isActive: true } },
+        include: {
+          category: {
+            include: { subCategories: { where: { isActive: true }, orderBy: { name: "asc" } } },
+          },
+        },
+        orderBy: { displayOrder: "asc" },
+        take: limit,
+      }),
+    [],
+    "getFeaturedCategoriesForHomepage"
+  );
 }
 
 export function getFeaturedCategoriesAdmin() {
@@ -62,14 +71,24 @@ export function removeFeaturedCategory(id: string) {
 
 // --- Featured Subcategories (homepage "Moon Essentials" grid) --------------
 
-/** Storefront query — includes the subcategory's parent category so the card can link to `/categories/[parent]?subCategory=[slug]`. */
+/**
+ * Storefront query — includes the subcategory's parent category so the card
+ * can link to `/categories/[parent]?subCategory=[slug]`. Called from the
+ * homepage render alongside `getFeaturedCategoriesForHomepage`, so it needs
+ * the same safeRead degradation — see `safeRead`.
+ */
 export function getFeaturedSubCategoriesForHomepage(limit = 8) {
-  return prisma.featuredSubCategory.findMany({
-    where: { isVisible: true, subCategory: { isActive: true } },
-    include: { subCategory: { include: { category: true } } },
-    orderBy: { displayOrder: "asc" },
-    take: limit,
-  });
+  return safeRead(
+    () =>
+      prisma.featuredSubCategory.findMany({
+        where: { isVisible: true, subCategory: { isActive: true } },
+        include: { subCategory: { include: { category: true } } },
+        orderBy: { displayOrder: "asc" },
+        take: limit,
+      }),
+    [],
+    "getFeaturedSubCategoriesForHomepage"
+  );
 }
 
 export function getFeaturedSubCategoriesAdmin() {
