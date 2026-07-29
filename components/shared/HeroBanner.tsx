@@ -19,11 +19,13 @@ interface HeroBannerProps {
  * text) are stored for admin editing but intentionally not rendered as text
  * overlays here, preserving the image-only design from the earlier hero pass.
  *
- * Each image renders inside its own aspect-ratio box (sized to the
+ * Each image renders inside its own fixed-aspect-ratio box (sized to the
  * recommended upload dimensions — desktop ~1920x800, mobile ~1080x1350)
- * with `fill` + `object-contain`, so the box height always derives from the
- * image's ratio instead of a fixed px height, and the artwork is never
- * cropped or zoomed regardless of the exact pixels an admin uploads.
+ * with `fill` + `object-cover`, so any uploaded banner — whatever its exact
+ * pixel dimensions — always fills the box completely edge-to-edge (no
+ * letterboxing/white margins), cropping only the minimum needed rather than
+ * shrinking the image to fit. Admins never need to pre-crop uploads to an
+ * exact ratio for this to look right.
  *
  * Below `sm` (true phone widths), the mobile image instead renders in a
  * landscape 16:9 box rather than the tall 1080:1350 portrait box — the
@@ -48,7 +50,7 @@ export function HeroBanner({ image, mobileImage, href, alt = "MoonKart Hero Bann
                 priority
                 fill
                 sizes="100vw"
-                className="object-contain transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.01]"
+                className="object-cover transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.01]"
               />
             </div>
             <div className="relative hidden aspect-[1080/1350] w-full overflow-hidden rounded-[22px] sm:block lg:hidden">
@@ -58,7 +60,7 @@ export function HeroBanner({ image, mobileImage, href, alt = "MoonKart Hero Bann
                 priority
                 fill
                 sizes="100vw"
-                className="object-contain transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.01]"
+                className="object-cover transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.01]"
               />
             </div>
           </>
@@ -75,7 +77,7 @@ export function HeroBanner({ image, mobileImage, href, alt = "MoonKart Hero Bann
             priority
             fill
             sizes="(max-width: 1024px) 100vw, 1280px"
-            className="object-contain transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.01]"
+            className="object-cover transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.01]"
           />
         </div>
       </Link>
