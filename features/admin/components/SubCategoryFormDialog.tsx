@@ -105,7 +105,14 @@ export function SubCategoryFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      {/* `flex max-h-[85vh] flex-col overflow-hidden` caps the dialog itself to
+          the viewport (with margin) and turns it into a header/body/footer
+          stack — the `overflow-hidden` here only frames that stack so the
+          fixed-position popup can't grow past `max-h`, it never clips real
+          content: the form below is the one scrollable region
+          (`overflow-y-auto`), so the header and footer/buttons stay pinned
+          and visible while the fields scroll underneath them. */}
+      <DialogContent className="flex max-h-[85vh] flex-col overflow-hidden sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{subCategory ? "Edit Subcategory" : "Add Subcategory"}</DialogTitle>
           <DialogDescription>
@@ -114,114 +121,120 @@ export function SubCategoryFormDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
-            <FormField
-              control={form.control}
-              name="categoryId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col">
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto py-1">
+              <FormField
+                control={form.control}
+                name="categoryId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {categories.map((category) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
                     <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
+                      <Input {...field} onChange={(event) => handleNameChange(event.target.value)} />
                     </FormControl>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input {...field} onChange={(event) => handleNameChange(event.target.value)} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="slug"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Slug</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        onChange={(event) => {
+                          setSlugTouched(true);
+                          field.onChange(event);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="slug"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Slug</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      onChange={(event) => {
-                        setSlugTouched(true);
-                        field.onChange(event);
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="image"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subcategory Image</FormLabel>
+                    {field.value && (
+                      // Fixed preview height (independent of the uploaded image's own
+                      // dimensions) so a very tall or very wide image can never grow
+                      // the form — object-cover crops to fill this box without
+                      // distorting the image.
+                      // eslint-disable-next-line @next/next/no-img-element -- Cloudinary URL, not registered in next/image remotePatterns
+                      <img
+                        src={field.value}
+                        alt="Subcategory"
+                        className="h-[200px] w-full rounded-lg border border-border-light object-cover"
+                      />
+                    )}
+                    <FormControl>
+                      <CloudinaryUploader onUploaded={(result) => field.onChange(result.url)} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="image"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Subcategory Image</FormLabel>
-                  {field.value && (
-                    // eslint-disable-next-line @next/next/no-img-element -- Cloudinary URL, not registered in next/image remotePatterns
-                    <img
-                      src={field.value}
-                      alt="Subcategory"
-                      className="h-24 w-full rounded-lg border border-border-light object-cover"
-                    />
-                  )}
-                  <FormControl>
-                    <CloudinaryUploader onUploaded={(result) => field.onChange(result.url)} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea rows={3} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea rows={3} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="isActive"
-              render={({ field }) => (
-                <div className="flex items-center justify-between rounded-lg border border-border-light px-3.5 py-3">
-                  <Label htmlFor="subcategory-active" className="font-normal text-text-primary">
-                    Active
-                  </Label>
-                  <Switch id="subcategory-active" checked={field.value} onCheckedChange={field.onChange} />
-                </div>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="isActive"
+                render={({ field }) => (
+                  <div className="flex items-center justify-between rounded-lg border border-border-light px-3.5 py-3">
+                    <Label htmlFor="subcategory-active" className="font-normal text-text-primary">
+                      Active
+                    </Label>
+                    <Switch id="subcategory-active" checked={field.value} onCheckedChange={field.onChange} />
+                  </div>
+                )}
+              />
+            </div>
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
