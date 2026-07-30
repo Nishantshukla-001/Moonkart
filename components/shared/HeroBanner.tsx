@@ -37,19 +37,18 @@ export function HeroBanner({ image, mobileImage, href, alt = "MoonKart Hero Bann
 
   return (
     <Container className="px-1 sm:px-6">
-      {/* Mobile-only: even less outer horizontal padding (px-1 vs. the sm:+
-          px-6 that reproduces the original spacing) so the banner occupies
-          more of the screen width, plus a stronger layered shadow — a
-          tighter, more saturated pink glow layer plus a deeper neutral
-          elevation layer (using this design system's --shadow-soft-lg gray
-          tone, at more depth than that token, echoing the same premium
-          language as the Categories cards below) — for a genuine "popping
-          out" floating feel. The white/pink ring layers that form the pink
-          border itself are untouched. Tablet/desktop keep the exact
-          original shadow via the `sm:shadow-[...]` override. */}
+      {/* Mobile-only: the white "mat" padding (p-2) and the white ring layer
+          of the shadow are both removed below `sm` — that solid white band
+          was the "picture in a frame" look the client flagged. In its place,
+          a thin pink ring sits directly on the rounded corner (a glow, not a
+          frame) plus three layered shadows (a close contact shadow, a pink
+          ambient glow, and a deep far shadow) for a floating-card feel.
+          Tablet/desktop are completely unchanged via the `sm:p-3` /
+          `sm:shadow-[...]` overrides, which reproduce the original
+          padding/shadow byte-for-byte. */}
       <Link
         href={href}
-        className="group relative block overflow-hidden rounded-[32px] bg-white p-2 shadow-[0_0_0_6px_white,0_0_0_12px_var(--blush-light),0_14px_30px_-6px_rgba(239,198,209,0.85),0_28px_56px_-14px_rgba(47,47,47,0.22)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_0_6px_white,0_0_0_14px_var(--blush-hover),0_28px_56px_-12px_rgba(239,198,209,0.65)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:p-3 sm:shadow-[0_0_0_6px_white,0_0_0_12px_var(--blush-light),0_24px_48px_-12px_rgba(239,198,209,0.55)]"
+        className="group relative block overflow-hidden rounded-[32px] bg-white p-0 shadow-[0_0_0_3px_var(--blush-light),0_4px_10px_-2px_rgba(47,47,47,0.12),0_14px_28px_-8px_rgba(239,198,209,0.9),0_30px_60px_-16px_rgba(47,47,47,0.25)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_0_6px_white,0_0_0_14px_var(--blush-hover),0_28px_56px_-12px_rgba(239,198,209,0.65)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:p-3 sm:shadow-[0_0_0_6px_white,0_0_0_12px_var(--blush-light),0_24px_48px_-12px_rgba(239,198,209,0.55)]"
       >
         {hasDedicatedMobileImage && (
           <>

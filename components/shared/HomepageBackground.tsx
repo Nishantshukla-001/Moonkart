@@ -61,13 +61,19 @@ export function HomepageBackground() {
           " var(--bg-section) 100%)",
       }}
     >
-      <WatercolorBlob variant="a" className="absolute top-[-6%] left-[-14%] size-[30rem] text-sage-hover/25 blur-3xl sm:size-[38rem]" />
-      <WatercolorBlob variant="b" className="absolute top-[6%] right-[-16%] size-[26rem] text-blush-hover/25 blur-3xl sm:size-[34rem]" />
-      <WatercolorBlob variant="c" className="absolute top-[24%] left-[-10%] size-[24rem] text-blush/30 blur-3xl sm:size-[30rem]" />
-      <WatercolorBlob variant="a" className="absolute top-[40%] right-[-12%] size-[26rem] text-warm-yellow/35 blur-3xl sm:size-[32rem]" />
-      <WatercolorBlob variant="b" className="absolute top-[58%] left-[-16%] size-[28rem] text-sage-hover/25 blur-3xl sm:size-[36rem]" />
-      <WatercolorBlob variant="c" className="absolute top-[74%] right-[-14%] size-[26rem] text-blush-hover/25 blur-3xl sm:size-[34rem]" />
-      <WatercolorBlob variant="a" className="absolute top-[90%] left-[-10%] size-[24rem] text-warm-yellow/30 blur-3xl sm:size-[30rem]" />
+      {/* `will-change-transform` on each blob is a performance-only hint (no
+          visual change): it asks the browser to composite these large
+          blur-3xl SVGs onto their own GPU layer up front, rather than
+          re-rasterizing that expensive blur on every scroll frame — mobile
+          browsers are noticeably less aggressive than desktop about doing
+          this automatically, which is what made scrolling feel laggy there. */}
+      <WatercolorBlob variant="a" className="absolute top-[-6%] left-[-14%] size-[30rem] text-sage-hover/25 blur-3xl will-change-transform sm:size-[38rem]" />
+      <WatercolorBlob variant="b" className="absolute top-[6%] right-[-16%] size-[26rem] text-blush-hover/25 blur-3xl will-change-transform sm:size-[34rem]" />
+      <WatercolorBlob variant="c" className="absolute top-[24%] left-[-10%] size-[24rem] text-blush/30 blur-3xl will-change-transform sm:size-[30rem]" />
+      <WatercolorBlob variant="a" className="absolute top-[40%] right-[-12%] size-[26rem] text-warm-yellow/35 blur-3xl will-change-transform sm:size-[32rem]" />
+      <WatercolorBlob variant="b" className="absolute top-[58%] left-[-16%] size-[28rem] text-sage-hover/25 blur-3xl will-change-transform sm:size-[36rem]" />
+      <WatercolorBlob variant="c" className="absolute top-[74%] right-[-14%] size-[26rem] text-blush-hover/25 blur-3xl will-change-transform sm:size-[34rem]" />
+      <WatercolorBlob variant="a" className="absolute top-[90%] left-[-10%] size-[24rem] text-warm-yellow/30 blur-3xl will-change-transform sm:size-[30rem]" />
 
       {doodles.map(({ Icon, className }, index) => (
         <Icon key={index} className={cn("absolute drop-shadow-sm", className)} />

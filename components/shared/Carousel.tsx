@@ -54,6 +54,7 @@ export function Carousel({
   headingClassName,
 }: CarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number | null>(null);
   const [canScrollPrev, setCanScrollPrev] = useState(false);
   const [canScrollNext, setCanScrollNext] = useState(false);
   const [pageCount, setPageCount] = useState(1);
@@ -70,6 +71,18 @@ export function Carousel({
     setActivePage(Math.round(el.scrollLeft / Math.max(visible, 1)));
   }, []);
 
+  // Native scroll events can fire far more often than the display's refresh
+  // rate during a touch fling — batching to one `measure()` per animation
+  // frame (instead of running it, and its state updates, on every single
+  // event) is what keeps fast mobile scrolling smooth here.
+  const handleScroll = useCallback(() => {
+    if (rafRef.current !== null) return;
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = null;
+      measure();
+    });
+  }, [measure]);
+
   useEffect(() => {
     measure();
     const el = scrollRef.current;
@@ -77,7 +90,10 @@ export function Carousel({
 
     const resizeObserver = new ResizeObserver(() => measure());
     resizeObserver.observe(el);
-    return () => resizeObserver.disconnect();
+    return () => {
+      resizeObserver.disconnect();
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    };
   }, [measure, children]);
 
   function scrollToPage(page: number) {
@@ -122,7 +138,7 @@ export function Carousel({
             aria-label={`${ariaLabel} carousel`}
             tabIndex={0}
             onKeyDown={handleKeyDown}
-            onScroll={measure}
+            onScroll={handleScroll}
             className="flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain touch-pan-x scroll-smooth pb-1 outline-none select-none contain-[layout_paint] sm:gap-5 [-ms-overflow-style:none] [scrollbar-width:none] focus-visible:ring-3 focus-visible:ring-ring/50 [&::-webkit-scrollbar]:hidden"
           >
             {Array.isArray(children)
