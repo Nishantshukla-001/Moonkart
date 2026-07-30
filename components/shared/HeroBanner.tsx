@@ -36,10 +36,20 @@ export function HeroBanner({ image, mobileImage, href, alt = "MoonKart Hero Bann
   const hasDedicatedMobileImage = Boolean(mobileImage);
 
   return (
-    <Container>
+    <Container className="px-1 sm:px-6">
+      {/* Mobile-only: even less outer horizontal padding (px-1 vs. the sm:+
+          px-6 that reproduces the original spacing) so the banner occupies
+          more of the screen width, plus a stronger layered shadow — a
+          tighter, more saturated pink glow layer plus a deeper neutral
+          elevation layer (using this design system's --shadow-soft-lg gray
+          tone, at more depth than that token, echoing the same premium
+          language as the Categories cards below) — for a genuine "popping
+          out" floating feel. The white/pink ring layers that form the pink
+          border itself are untouched. Tablet/desktop keep the exact
+          original shadow via the `sm:shadow-[...]` override. */}
       <Link
         href={href}
-        className="group relative block overflow-hidden rounded-[32px] bg-white p-2 shadow-[0_0_0_6px_white,0_0_0_12px_var(--blush-light),0_24px_48px_-12px_rgba(239,198,209,0.55)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_0_6px_white,0_0_0_14px_var(--blush-hover),0_28px_56px_-12px_rgba(239,198,209,0.65)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:p-3"
+        className="group relative block overflow-hidden rounded-[32px] bg-white p-2 shadow-[0_0_0_6px_white,0_0_0_12px_var(--blush-light),0_14px_30px_-6px_rgba(239,198,209,0.85),0_28px_56px_-14px_rgba(47,47,47,0.22)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_0_6px_white,0_0_0_14px_var(--blush-hover),0_28px_56px_-12px_rgba(239,198,209,0.65)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 sm:p-3 sm:shadow-[0_0_0_6px_white,0_0_0_12px_var(--blush-light),0_24px_48px_-12px_rgba(239,198,209,0.55)]"
       >
         {hasDedicatedMobileImage && (
           <>

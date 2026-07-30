@@ -90,7 +90,7 @@ export function Navbar({ categories }: { categories: ICategory[] }) {
           className="flex shrink-0 items-center gap-0.5 sm:gap-3"
           aria-label={`${siteConfig.name} home`}
         >
-          <span className="relative flex size-[52px] shrink-0 items-center justify-center sm:size-11">
+          <span className="relative flex size-[68px] shrink-0 items-center justify-center sm:size-[58px]">
             <span
               aria-hidden="true"
               className="absolute inset-0 rounded-full border-2 border-dashed border-blush-hover/50"
@@ -100,7 +100,7 @@ export function Navbar({ categories }: { categories: ICategory[] }) {
               alt={siteConfig.name}
               width={36}
               height={36}
-              className="size-[42px] rounded-full object-cover shadow-soft sm:size-9"
+              className="size-[55px] rounded-full object-cover shadow-soft sm:size-[47px]"
               priority
             />
             <Ribbon aria-hidden="true" className="absolute -top-1 -right-1 size-4 rotate-12 text-blush-hover" />
