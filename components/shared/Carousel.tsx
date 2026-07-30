@@ -139,7 +139,17 @@ export function Carousel({
             tabIndex={0}
             onKeyDown={handleKeyDown}
             onScroll={handleScroll}
-            className="flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain touch-pan-x scroll-smooth pb-1 outline-none select-none contain-[layout_paint] sm:gap-5 [-ms-overflow-style:none] [scrollbar-width:none] focus-visible:ring-3 focus-visible:ring-ring/50 [&::-webkit-scrollbar]:hidden"
+            // `snap-proximity`, not `snap-mandatory`: on touch devices,
+            // `mandatory` forces this horizontal scroller to snap-correct
+            // for *any* stray horizontal touch delta — including the tiny,
+            // incidental ones a slow vertical swipe almost always has —
+            // which felt like the page scroll catching right as a finger
+            // passed over this section. `proximity` only snaps when a
+            // scroll already comes to rest near a slide on its own, so it
+            // no longer fights an intended vertical page scroll. Snapping
+            // during genuine horizontal swipes/arrow-button/pagination-dot
+            // navigation is unaffected.
+            className="flex snap-x snap-proximity gap-4 overflow-x-auto overscroll-x-contain touch-pan-x scroll-smooth pb-1 outline-none select-none contain-[layout_paint] sm:gap-5 [-ms-overflow-style:none] [scrollbar-width:none] focus-visible:ring-3 focus-visible:ring-ring/50 [&::-webkit-scrollbar]:hidden"
           >
             {Array.isArray(children)
               ? children.map((child, index) => (
