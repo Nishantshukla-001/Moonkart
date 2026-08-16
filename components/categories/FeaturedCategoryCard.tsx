@@ -38,10 +38,9 @@ const pastelMats = [
 function matFor(slug: string) {
   const sum = [...slug].reduce((total, char) => total + char.charCodeAt(0), 0);
   const { text, ring } = pastelMats[sum % pastelMats.length];
-  // Background is now the same soft pastel pink for every card (client
-  // request for visual consistency) — text/ring still rotate per-slug,
-  // unchanged from before.
-  return { mat: "bg-blush-light", text, ring };
+  // Background is white for every card (client request) — text/ring still
+  // rotate per-slug, unchanged from before.
+  return { mat: "bg-white", text, ring };
 }
 
 /**

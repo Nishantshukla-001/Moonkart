@@ -120,25 +120,25 @@ export const testimonials: Testimonial[] = [
   {
     name: "Ananya R.",
     quote:
-      "MoonKart has become my go-to for gifting myself something special. The jewellery feels far more premium than the price suggests.",
+      "This hair clutch is so cute and stylish, with a strong grip that holds my hair in place all day. Comfortable to wear and perfect for my everyday hairstyles.",
     rating: 5,
   },
   {
     name: "Priya S.",
     quote:
-      "Ordered a dress for a wedding and it arrived beautifully packaged, right on time. Genuinely impressed with the whole experience.",
+      "These artificial nails look so beautiful and premium, and the designs and colors are stunning. Super easy to apply at home and perfect for special occasions.",
     rating: 5,
   },
   {
     name: "Meera K.",
     quote:
-      "Customer support helped me exchange a size within minutes. It's rare to see this level of care from an online store.",
+      "Ordered a hamper for my mom's birthday and it was beautifully arranged with such attractive presentation — the perfect gift. She loved it, and I'll definitely order again for future celebrations.",
     rating: 4,
   },
   {
     name: "Kavya N.",
     quote:
-      "The quality of their skincare picks is unmatched for the price point. I've already reordered three times.",
+      "This vanity pouch is so useful and stylish, perfect for organizing my cosmetics and everyday essentials. Compact and easy to carry, whether I'm traveling or just heading out.",
     rating: 5,
   },
 ];

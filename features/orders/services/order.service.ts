@@ -1,6 +1,7 @@
 import "server-only";
 
 import { Prisma } from "@prisma/client";
+import { after } from "next/server";
 
 import {
   createNotification,
@@ -65,18 +66,24 @@ export type PlaceOrderResult =
  * back everything (no partial orders, no partial stock decrements).
  */
 export async function placeOrder(userId: string, addressId: string): Promise<PlaceOrderResult> {
-  const address = await prisma.address.findFirst({ where: { id: addressId, userId } });
-  if (!address) return { success: false, error: "Selected address not found." };
+  // These three reads are independent of one another — running them
+  // concurrently instead of one-after-another removes two round trips'
+  // worth of latency from the common (all-valid) checkout path. Error
+  // precedence below is unchanged: address is still checked before cart,
+  // which is still checked before user.
+  const [address, cart, user] = await Promise.all([
+    prisma.address.findFirst({ where: { id: addressId, userId } }),
+    prisma.cart.findUnique({
+      where: { userId },
+      include: { items: { include: { product: true, variant: true } } },
+    }),
+    prisma.user.findUnique({ where: { id: userId } }),
+  ]);
 
-  const cart = await prisma.cart.findUnique({
-    where: { userId },
-    include: { items: { include: { product: true, variant: true } } },
-  });
+  if (!address) return { success: false, error: "Selected address not found." };
   if (!cart || cart.items.length === 0) {
     return { success: false, error: "Your cart is empty." };
   }
-
-  const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) return { success: false, error: "User not found." };
 
   try {
@@ -217,14 +224,20 @@ export async function placeOrder(userId: string, addressId: string): Promise<Pla
 
     const order = await getOrderById(userId, orderId);
 
-    // Best-effort — a notification failure should never fail a successful order.
-    await createNotification(
-      userId,
-      "ORDER_STATUS",
-      "Order placed!",
-      `Your order ${order!.orderNumber} has been placed and is being processed.`,
-      `/orders/${order!.id}`
-    ).catch(() => null);
+    // Deferred via `after()` — not on the response's critical path, since the
+    // order has already succeeded and the customer is waiting to be
+    // redirected. Still runs to completion (unlike a bare detached promise,
+    // which a serverless platform could kill mid-write); best-effort in that
+    // a notification failure must never surface as a checkout failure.
+    after(() =>
+      createNotification(
+        userId,
+        "ORDER_STATUS",
+        "Order placed!",
+        `Your order ${order!.orderNumber} has been placed and is being processed.`,
+        `/orders/${order!.id}`
+      ).catch(() => null)
+    );
 
     return { success: true, order: order! };
   } catch (error) {
@@ -266,25 +279,33 @@ export async function placeOrderFromRazorpayPayment({
   razorpayOrderId,
   razorpayPaymentId,
 }: PlaceOrderFromRazorpayPaymentParams): Promise<PlaceOrderFromRazorpayResult> {
-  const existing = await prisma.order.findUnique({ where: { razorpayPaymentId } });
+  // These four reads are independent of one another — running them
+  // concurrently instead of one-after-another removes several round trips'
+  // worth of latency from the common (first-attempt, non-duplicate)
+  // checkout path. In the rare duplicate-payment case, address/cart/user
+  // end up fetched needlessly, but that's a cheap trade for a real speedup
+  // on the normal path. Precedence below (existing → address → cart → user)
+  // is unchanged from before.
+  const [existing, address, cart, user] = await Promise.all([
+    prisma.order.findUnique({ where: { razorpayPaymentId } }),
+    prisma.address.findFirst({ where: { id: addressId, userId } }),
+    prisma.cart.findUnique({
+      where: { userId },
+      include: { items: { include: { product: true, variant: true } } },
+    }),
+    prisma.user.findUnique({ where: { id: userId } }),
+  ]);
+
   if (existing) {
     const order = await getOrderById(userId, existing.id);
     if (!order) return { success: false, error: "Order not found." };
     return { success: true, order, alreadyExisted: true };
   }
 
-  const address = await prisma.address.findFirst({ where: { id: addressId, userId } });
   if (!address) return { success: false, error: "Selected address not found." };
-
-  const cart = await prisma.cart.findUnique({
-    where: { userId },
-    include: { items: { include: { product: true, variant: true } } },
-  });
   if (!cart || cart.items.length === 0) {
     return { success: false, error: "Your cart is empty." };
   }
-
-  const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) return { success: false, error: "User not found." };
 
   try {
@@ -415,14 +436,21 @@ export async function placeOrderFromRazorpayPayment({
     const order = await getOrderById(userId, orderId);
     if (!order) return { success: false, error: "Order not found after creation." };
 
-    // Best-effort — a notification failure should never fail a successful order.
-    await createNotification(
-      userId,
-      "ORDER_STATUS",
-      "Order placed!",
-      `Your order ${order.orderNumber} has been placed and is being processed.`,
-      `/orders/${order.id}`
-    ).catch(() => null);
+    // Deferred via `after()` — this is the exact response the client is
+    // waiting on to redirect to the success page after a successful
+    // payment, so a notification write must not sit on its critical path.
+    // Still runs to completion (unlike a bare detached promise, which a
+    // serverless platform could kill mid-write); best-effort in that a
+    // notification failure must never surface as a checkout failure.
+    after(() =>
+      createNotification(
+        userId,
+        "ORDER_STATUS",
+        "Order placed!",
+        `Your order ${order.orderNumber} has been placed and is being processed.`,
+        `/orders/${order.id}`
+      ).catch(() => null)
+    );
 
     return { success: true, order, alreadyExisted: false };
   } catch (error) {

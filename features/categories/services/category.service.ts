@@ -1,5 +1,7 @@
 import "server-only";
 
+import { cache } from "react";
+
 import { prisma, safeRead } from "@/lib/prisma";
 import type { CategoryInput, UpdateCategoryInput } from "@/features/categories/validation/category.schema";
 
@@ -37,8 +39,14 @@ export function getCategoriesAdmin() {
   });
 }
 
-/** Also called from the homepage (Moon Essentials fallback) alongside `getCategories`, so it needs the same safeRead degradation — see `safeRead`. */
-export function getCategoryBySlug(slug: string) {
+/**
+ * Also called from the homepage (Moon Essentials fallback) alongside
+ * `getCategories`, so it needs the same safeRead degradation — see
+ * `safeRead`. Wrapped in `React.cache()` so the category detail page's
+ * `generateMetadata` and page-body render — both calling this with the same
+ * slug within one request — share a single query instead of two.
+ */
+export const getCategoryBySlug = cache((slug: string) => {
   return safeRead(
     () =>
       prisma.category.findUnique({
@@ -48,7 +56,7 @@ export function getCategoryBySlug(slug: string) {
     null,
     "getCategoryBySlug"
   );
-}
+});
 
 const adminCategoryInclude = {
   subCategories: true,

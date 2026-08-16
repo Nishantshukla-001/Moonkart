@@ -1,5 +1,7 @@
 import "server-only";
 
+import { cache } from "react";
+
 import { prisma, safeRead } from "@/lib/prisma";
 import type { BrandInput, UpdateBrandInput } from "@/features/categories/validation/brand.schema";
 
@@ -17,9 +19,14 @@ export function getBrands(options: { includeInactive?: boolean } = {}) {
   );
 }
 
-export function getBrandBySlug(slug: string) {
+/**
+ * Wrapped in `React.cache()` so the brand detail page's `generateMetadata`
+ * and page-body render — both calling this with the same slug within one
+ * request — share a single query instead of two.
+ */
+export const getBrandBySlug = cache((slug: string) => {
   return prisma.brand.findUnique({ where: { slug } });
-}
+});
 
 const adminBrandInclude = { _count: { select: { products: true } } } as const;
 

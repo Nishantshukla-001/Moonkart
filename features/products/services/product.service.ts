@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { Prisma } from "@prisma/client";
+import { cache } from "react";
 
 import { notifyWishlistersOfRestock } from "@/features/notifications/services/notification.service";
 import { destroyCloudinaryAsset } from "@/lib/cloudinary";
@@ -89,12 +90,18 @@ export async function getProducts(query: ProductQuery) {
   };
 }
 
-export function getProductBySlug(slug: string) {
+/**
+ * Wrapped in `React.cache()` so the product detail page's `generateMetadata`
+ * and page-body render — both of which call this with the same slug within
+ * one request — share a single query instead of hitting the database twice
+ * per page load.
+ */
+export const getProductBySlug = cache((slug: string) => {
   return prisma.product.findFirst({
     where: { slug, isPublished: true },
     include: publicProductInclude,
   });
-}
+});
 
 /** Slug + updatedAt only — sitemap.xml needs no other fields for potentially hundreds of published products. */
 export function getAllProductSlugsForSitemap() {

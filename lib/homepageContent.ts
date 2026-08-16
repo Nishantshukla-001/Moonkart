@@ -1,4 +1,4 @@
-import { BadgeCheck, PackageCheck, RotateCcw, ShieldCheck, type LucideIcon } from "lucide-react";
+import { BadgeCheck, PackageCheck, ShieldCheck, type LucideIcon } from "lucide-react";
 
 /**
  * The "Why Choose Us" feature tiles — the one piece of homepage content that
@@ -23,11 +23,6 @@ export const whyChooseUsFeatures: FeatureHighlight[] = [
     icon: ShieldCheck,
     title: "Secure Payments",
     description: "Checkout with confidence using trusted, encrypted payment methods.",
-  },
-  {
-    icon: RotateCcw,
-    title: "Easy Returns",
-    description: "Change of heart? Return eligible items with a hassle-free process.",
   },
   {
     icon: PackageCheck,

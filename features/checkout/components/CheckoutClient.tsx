@@ -65,50 +65,64 @@ export function CheckoutClient({
   }
 
   async function verifyPayment(paymentResponse: RazorpayPaymentSuccessResponse) {
-    try {
-      const response = await fetch("/api/payments/razorpay/verify", {
+    // Dispatched together rather than one-after-another — /complete-order
+    // independently re-verifies this same signature itself (it never trusts
+    // /verify's result), so the two requests don't actually depend on each
+    // other; only the UI's *handling* of the results still happens in the
+    // original order below. This removes a full network round trip from
+    // the wait between payment and redirect. No UI is shown between the two
+    // calls today, so there is no visible behavior change — only which of
+    // the two original error branches fires (verify-network-failure vs.
+    // complete-order-network-failure) is preserved via `allSettled` so each
+    // keeps its own original message.
+    const [verifySettled, completeSettled] = await Promise.allSettled([
+      fetch("/api/payments/razorpay/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(paymentResponse),
-      });
-      const result = await response.json();
+      }).then((response) => response.json()),
+      fetch("/api/payments/razorpay/complete-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ addressId: selectedAddressId, ...paymentResponse }),
+      }).then((response) => response.json()),
+    ]);
 
-      if (!result.success || !result.data?.verified) {
-        toast.error(result.message || "Payment verification failed. Please contact support if the amount was deducted.");
-        setIsPlacingOrder(false);
-        return;
-      }
-
-      // Payment is verified — finalize the Order. If this fails, the
-      // Razorpay payment has still succeeded, so the shopper must never be
-      // sent back to "Pay Now" (that would charge them a second time).
-      // `finalizationError` replaces the button with a static message instead.
-      try {
-        const completeResponse = await fetch("/api/payments/razorpay/complete-order", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ addressId: selectedAddressId, ...paymentResponse }),
-        });
-        const completeResult = await completeResponse.json();
-
-        if (!completeResult.success || !completeResult.data) {
-          setFinalizationError(
-            `Your payment (ID: ${paymentResponse.razorpay_payment_id}) was received, but we couldn't finalize your order automatically. Please contact support with this Payment ID — do not pay again.`
-          );
-          return;
-        }
-
-        await useCart.getState().clear();
-        router.push(ROUTES.checkoutSuccess(completeResult.data.orderNumber));
-      } catch {
-        setFinalizationError(
-          `Your payment (ID: ${paymentResponse.razorpay_payment_id}) was received, but we couldn't confirm your order due to a connection issue. Please contact support with this Payment ID — do not pay again.`
-        );
-      }
-    } catch {
+    if (verifySettled.status === "rejected") {
       toast.error("Could not verify payment. Please contact support if the amount was deducted.");
       setIsPlacingOrder(false);
+      return;
     }
+
+    const verifyResult = verifySettled.value;
+    if (!verifyResult.success || !verifyResult.data?.verified) {
+      toast.error(verifyResult.message || "Payment verification failed. Please contact support if the amount was deducted.");
+      setIsPlacingOrder(false);
+      return;
+    }
+
+    // Payment is verified — check the Order finalization outcome. If this
+    // failed, the Razorpay payment has still succeeded, so the shopper must
+    // never be sent back to "Pay Now" (that would charge them a second
+    // time). `finalizationError` replaces the button with a static message
+    // instead.
+    if (completeSettled.status === "rejected") {
+      setFinalizationError(
+        `Your payment (ID: ${paymentResponse.razorpay_payment_id}) was received, but we couldn't confirm your order due to a connection issue. Please contact support with this Payment ID — do not pay again.`
+      );
+      return;
+    }
+
+    const completeResult = completeSettled.value;
+    if (!completeResult.success || !completeResult.data) {
+      setFinalizationError(
+        `Your payment (ID: ${paymentResponse.razorpay_payment_id}) was received, but we couldn't finalize your order automatically. Please contact support with this Payment ID — do not pay again.`
+      );
+      return;
+    }
+
+    await useCart.getState().clear();
+    router.push(ROUTES.checkoutSuccess(completeResult.data.orderNumber));
   }
 
   async function handlePlaceOrder() {

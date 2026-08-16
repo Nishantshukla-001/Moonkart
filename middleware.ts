@@ -57,11 +57,15 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except static assets and image optimization,
-     * so the Supabase session cookie is refreshed on every navigation.
-     */
-    "/((?!_next/static|_next/image|favicon.ico|icon.jpg|.*\\.(?:svg|png|jpg|jpeg|webp|gif)$).*)",
-  ],
+  // Scoped to exactly the route trees `requiresAuth` above checks
+  // (CUSTOMER_ROUTES + ADMIN_ROUTES). `updateSession()` calls
+  // `supabase.auth.getUser()`, a real network round trip to Supabase's Auth
+  // server — the previous catch-all matcher meant every single navigation
+  // and every `/api/*` call paid that cost, even though the verified-id
+  // header this sets (see VERIFIED_SUPABASE_ID_HEADER) is only ever read by
+  // `getCurrentUser()` (lib/auth.ts), which already independently
+  // re-verifies whenever that header is absent. So this narrower matcher
+  // cannot make any individual request slower — it only removes the cost
+  // for requests that were never using the header anyway.
+  matcher: ["/account/:path*", "/profile/:path*", "/orders/:path*", "/checkout/:path*", "/admin/:path*"],
 };
