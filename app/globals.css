@@ -115,6 +115,16 @@
 }
 
 :root {
+  /* System-font stacks, not next/font/google — that fetched Inter/Poppins
+     from fonts.gstatic.com at build time, which was failing the Vercel
+     build. No network fetch, no external font files; every OS renders its
+     own clean modern sans-serif here. `ui-rounded` gives Apple platforms a
+     slightly more geometric look for headings, closer to Poppins, and is
+     ignored (falls through the stack) everywhere else. */
+  --font-inter: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-poppins: ui-rounded, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
+
   --background: #ffffff;
   --foreground: #2f2f2f;
   --card: #ffffff;

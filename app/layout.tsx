@@ -8,7 +8,6 @@ import { getCategories } from "@/features/categories/services/category.service";
 import { getStoreSettings } from "@/features/admin/services/storeSettings.service";
 import { getHomepageContent } from "@/features/homepage/services/homepageContent.service";
 import { defaultMetadata, toJsonLd } from "@/lib/seo";
-import { inter, poppins } from "@/lib/fonts";
 import { Providers } from "@/providers/Providers";
 
 export const metadata = defaultMetadata;
@@ -52,7 +51,7 @@ export default async function RootLayout({
   const { categories, storeSettings, homepageContent } = await getCachedLayoutChrome();
 
   return (
-    <html lang="en" className={`${poppins.variable} ${inter.variable}`} suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body className="flex min-h-screen flex-col antialiased">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: toJsonLd(organizationJsonLd) }} />
         <Providers>
