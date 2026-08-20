@@ -8,6 +8,7 @@ import {
   createReviewRemindersForOrder,
 } from "@/features/notifications/services/notification.service";
 import { prisma } from "@/lib/prisma";
+import { sendAdminNewOrderEmail, sendOrderConfirmationEmail, sendOrderStatusEmail } from "@/lib/email/sendOrderEmails";
 import type { AdminOrderQuery, OrderStatusValue } from "@/features/orders/validation/order.schema";
 
 const orderInclude = {
@@ -239,6 +240,21 @@ export async function placeOrder(userId: string, addressId: string): Promise<Pla
       ).catch(() => null)
     );
 
+    // Same reasoning as the notification above — deferred so a slow or
+    // failing Resend call can never delay or fail an already-successful
+    // order. Each email is caught independently so one failing never blocks
+    // the other, and the order itself is never affected either way.
+    after(() =>
+      sendOrderConfirmationEmail(order!).catch((error) =>
+        console.error("Failed to send order confirmation email:", { orderId: order!.id, error })
+      )
+    );
+    after(() =>
+      sendAdminNewOrderEmail(order!).catch((error) =>
+        console.error("Failed to send admin new-order email:", { orderId: order!.id, error })
+      )
+    );
+
     return { success: true, order: order! };
   } catch (error) {
     if (error instanceof CheckoutError) {
@@ -452,6 +468,23 @@ export async function placeOrderFromRazorpayPayment({
       ).catch(() => null)
     );
 
+    // Same reasoning as the notification above — deferred so a slow or
+    // failing Resend call can never delay the payment-success redirect or
+    // fail an already-captured, already-recorded order. Only reached on a
+    // genuinely new order (the `existing` early-return above already
+    // handles retried/duplicate payment requests), so a retried request
+    // can never trigger a second confirmation email.
+    after(() =>
+      sendOrderConfirmationEmail(order).catch((error) =>
+        console.error("Failed to send order confirmation email:", { orderId: order.id, error })
+      )
+    );
+    after(() =>
+      sendAdminNewOrderEmail(order).catch((error) =>
+        console.error("Failed to send admin new-order email:", { orderId: order.id, error })
+      )
+    );
+
     return { success: true, order, alreadyExisted: false };
   } catch (error) {
     if (error instanceof CheckoutError) {
@@ -594,6 +627,15 @@ export async function updateOrderStatus(id: string, status: OrderStatusValue) {
   if (status === "DELIVERED") {
     await createReviewRemindersForOrder(order.id).catch(() => null);
   }
+
+  // Deferred via `after()` so a slow/failing Resend call can never delay
+  // the admin's status-update response. `sendOrderStatusEmail` itself is a
+  // no-op for statuses this feature doesn't cover (see orderStatusEmail.ts).
+  after(() =>
+    sendOrderStatusEmail(order, status).catch((error) =>
+      console.error("Failed to send order status email:", { orderId: order.id, status, error })
+    )
+  );
 
   return order;
 }
