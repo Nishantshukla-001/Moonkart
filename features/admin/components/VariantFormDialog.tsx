@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { X } from "lucide-react";
 
+import { CloudinaryUploader } from "@/components/shared/CloudinaryUploader";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -86,7 +88,10 @@ export function VariantFormDialog({ open, onOpenChange, productId, variant, onSa
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      {/* Capped to the viewport and split into a pinned header/footer with a
+          scrollable body in between — the image uploader/preview push this
+          dialog's content taller than a fixed-height sm:max-w-md would fit. */}
+      <DialogContent className="flex max-h-[85vh] flex-col overflow-hidden sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{variant ? "Edit Variant" : "Add Variant"}</DialogTitle>
           <DialogDescription>
@@ -95,7 +100,8 @@ export function VariantFormDialog({ open, onOpenChange, productId, variant, onSa
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col">
+            <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto py-1">
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -203,9 +209,29 @@ export function VariantFormDialog({ open, onOpenChange, productId, variant, onSa
               name="image"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Variant Image URL</FormLabel>
+                  <FormLabel>Variant Image</FormLabel>
+                  {field.value && (
+                    <div className="relative w-fit">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- Cloudinary URL, not registered in next/image remotePatterns */}
+                      <img
+                        src={field.value}
+                        alt="Variant"
+                        className="h-[140px] w-[140px] rounded-lg border border-border-light object-cover"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon-sm"
+                        className="absolute -top-2 -right-2 rounded-full"
+                        onClick={() => field.onChange("")}
+                        aria-label="Remove variant image"
+                      >
+                        <X className="size-3.5" />
+                      </Button>
+                    </div>
+                  )}
                   <FormControl>
-                    <Input placeholder="https://… (optional)" {...field} />
+                    <CloudinaryUploader onUploaded={(result) => field.onChange(result.url)} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -224,6 +250,7 @@ export function VariantFormDialog({ open, onOpenChange, productId, variant, onSa
                 </div>
               )}
             />
+            </div>
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

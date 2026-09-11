@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -15,19 +16,29 @@ const emptyDefaults: AnnouncementInput = { title: "", message: "", link: "" };
 
 export function AnnouncementForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingValues, setPendingValues] = useState<AnnouncementInput | null>(null);
 
   const form = useForm<AnnouncementInput>({
     resolver: zodResolver(announcementSchema),
     defaultValues: emptyDefaults,
   });
 
-  async function onSubmit(values: AnnouncementInput) {
+  // The actual submit only opens the confirmation step — sending happens in
+  // handleConfirmedSend once the admin confirms.
+  function handleReviewSubmit(values: AnnouncementInput) {
+    setPendingValues(values);
+    setConfirmOpen(true);
+  }
+
+  async function handleConfirmedSend() {
+    if (!pendingValues) return;
     setIsSubmitting(true);
     try {
       const response = await fetch("/api/admin/announcements", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify(pendingValues),
       });
       const json = await response.json();
 
@@ -37,6 +48,7 @@ export function AnnouncementForm() {
       }
       toast.success(json.message);
       form.reset(emptyDefaults);
+      setPendingValues(null);
     } catch {
       toast.error("Could not reach the server. Check your connection and try again.");
     } finally {
@@ -45,8 +57,9 @@ export function AnnouncementForm() {
   }
 
   return (
+    <>
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+      <form onSubmit={form.handleSubmit(handleReviewSubmit)} className="flex flex-col gap-4">
         <FormField
           control={form.control}
           name="title"
@@ -91,5 +104,16 @@ export function AnnouncementForm() {
         </Button>
       </form>
     </Form>
+
+    <ConfirmDialog
+      open={confirmOpen}
+      onOpenChange={setConfirmOpen}
+      title="Send to all customers?"
+      description="Are you sure you want to send this notification to all users? This cannot be undone."
+      confirmLabel="Send Notification"
+      variant="default"
+      onConfirm={handleConfirmedSend}
+    />
+    </>
   );
 }

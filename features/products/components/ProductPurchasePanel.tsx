@@ -1,42 +1,43 @@
 "use client";
 
 import { Heart, Minus, Plus, ShoppingBag } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
-import type { IProductWithRelations } from "@/types/product";
+import type { IProductVariant, IProductWithRelations } from "@/types/product";
 
-export function ProductPurchasePanel({ product }: { product: IProductWithRelations }) {
+interface ProductPurchasePanelProps {
+  product: IProductWithRelations;
+  /** Sizes/colors and the currently-selected variant are owned by the parent (ProductVariantSection) — the gallery needs to react to the same selection, so it can't live locally here anymore. Everything else (quantity, wishlist, add-to-cart) is unchanged. */
+  sizes: string[];
+  colors: string[];
+  selectedSize?: string;
+  selectedColor?: string;
+  selectedVariant?: IProductVariant;
+  onSelectSize: (size: string) => void;
+  onSelectColor: (color: string) => void;
+}
+
+export function ProductPurchasePanel({
+  product,
+  sizes,
+  colors,
+  selectedSize,
+  selectedColor,
+  selectedVariant,
+  onSelectSize,
+  onSelectColor,
+}: ProductPurchasePanelProps) {
   const addItem = useCart((state) => state.addItem);
   const isWishlisted = useWishlist((state) => state.isWishlisted(product.id));
   const toggleWishlist = useWishlist((state) => state.toggle);
 
-  const sizes = useMemo(
-    () => [...new Set(product.variants.map((variant) => variant.size).filter(Boolean))] as string[],
-    [product.variants]
-  );
-  const colors = useMemo(
-    () => [...new Set(product.variants.map((variant) => variant.color).filter(Boolean))] as string[],
-    [product.variants]
-  );
-
-  const defaultVariant = product.variants.find((variant) => variant.isDefault) ?? product.variants[0];
-  const [selectedSize, setSelectedSize] = useState(defaultVariant?.size ?? undefined);
-  const [selectedColor, setSelectedColor] = useState(defaultVariant?.color ?? undefined);
   const [quantity, setQuantity] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const selectedVariant = product.hasVariants
-    ? product.variants.find(
-        (variant) =>
-          (sizes.length === 0 || variant.size === selectedSize) &&
-          (colors.length === 0 || variant.color === selectedColor)
-      )
-    : undefined;
 
   const price = selectedVariant
     ? (selectedVariant.salePrice ?? selectedVariant.price ?? product.price)
@@ -83,7 +84,7 @@ export function ProductPurchasePanel({ product }: { product: IProductWithRelatio
               <button
                 key={size}
                 type="button"
-                onClick={() => setSelectedSize(size)}
+                onClick={() => onSelectSize(size)}
                 className={cn(
                   "rounded-lg border px-4 py-2 text-sm font-medium transition-colors duration-[250ms]",
                   selectedSize === size
@@ -100,13 +101,16 @@ export function ProductPurchasePanel({ product }: { product: IProductWithRelatio
 
       {colors.length > 0 && (
         <div className="flex flex-col gap-2">
-          <span className="font-heading text-sm font-semibold text-text-primary">Color</span>
+          <span className="font-heading text-sm font-semibold text-text-primary">
+            Selected Color: {selectedColor}
+          </span>
           <div className="flex flex-wrap gap-2">
             {colors.map((color) => (
               <button
                 key={color}
                 type="button"
-                onClick={() => setSelectedColor(color)}
+                onClick={() => onSelectColor(color)}
+                aria-pressed={selectedColor === color}
                 className={cn(
                   "rounded-lg border px-4 py-2 text-sm font-medium transition-colors duration-[250ms]",
                   selectedColor === color

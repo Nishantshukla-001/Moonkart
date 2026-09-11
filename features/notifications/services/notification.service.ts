@@ -28,9 +28,12 @@ export async function createNotificationsForUsers(
   });
 }
 
-/** Admin broadcast — every active customer gets the same announcement. */
+/** Admin broadcast — every active customer gets the same announcement. Admin/internal accounts are deliberately excluded — this is a customer-facing marketing broadcast, not an internal one. */
 export async function createAnnouncementForAllUsers(title: string, message: string, link?: string) {
-  const users = await prisma.user.findMany({ where: { isActive: true }, select: { id: true } });
+  const users = await prisma.user.findMany({
+    where: { isActive: true, role: "CUSTOMER" },
+    select: { id: true },
+  });
   return createNotificationsForUsers(
     users.map((u) => u.id),
     "ANNOUNCEMENT",
