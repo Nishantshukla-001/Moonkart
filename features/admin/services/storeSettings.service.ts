@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import type { StoreSettings } from "@prisma/client";
 
 import { prisma, safeRead } from "@/lib/prisma";
@@ -40,14 +41,18 @@ const DEFAULT_STORE_SETTINGS: StoreSettings = {
  * updateStoreSettings below, the only place this row is created) and when
  * the database is temporarily unreachable (e.g. P1001 during a build), so
  * no page render or static build can ever crash on this call.
+ *
+ * Wrapped in `React.cache()` so pages that call this directly (e.g.
+ * /contact) alongside the root layout's own call within the same request
+ * share one query instead of issuing it twice.
  */
-export async function getStoreSettings(): Promise<StoreSettings> {
+export const getStoreSettings = cache(async (): Promise<StoreSettings> => {
   return safeRead(
     async () => (await prisma.storeSettings.findUnique({ where: { id: SINGLETON_ID } })) ?? DEFAULT_STORE_SETTINGS,
     DEFAULT_STORE_SETTINGS,
     "getStoreSettings"
   );
-}
+});
 
 export async function updateStoreSettings(data: StoreSettingsInput) {
   const previous = await prisma.storeSettings.findUnique({

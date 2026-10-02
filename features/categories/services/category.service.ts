@@ -9,8 +9,12 @@ import type { CategoryInput, UpdateCategoryInput } from "@/features/categories/v
  * Called from the root layout (every route) and from the build-time
  * sitemap generator, so a temporarily unreachable database must degrade to
  * an empty list instead of crashing the build — see `safeRead`.
+ *
+ * Wrapped in `React.cache()` so pages that also call this directly alongside
+ * the root layout (e.g. the homepage, `/categories`) within the same request
+ * share one query instead of issuing it twice.
  */
-export function getCategories(options: { includeInactive?: boolean } = {}) {
+export const getCategories = cache((options: { includeInactive?: boolean } = {}) => {
   return safeRead(
     () =>
       prisma.category.findMany({
@@ -24,7 +28,7 @@ export function getCategories(options: { includeInactive?: boolean } = {}) {
     [],
     "getCategories"
   );
-}
+});
 
 /**
  * Admin variant of `getCategories` — the public one deliberately filters

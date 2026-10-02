@@ -13,7 +13,7 @@ export const productSchema = z
       .max(180, "Must be under 180 characters")
       .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Use lowercase letters, numbers, and hyphens only"),
     shortDescription: z.string().trim().max(200, "Must be under 200 characters").optional().or(z.literal("")),
-    description: z.string().trim().max(5000, "Must be under 5000 characters").optional().or(z.literal("")),
+    description: z.string().trim().optional().or(z.literal("")),
     sku: z.string().trim().max(50, "Must be under 50 characters").optional().or(z.literal("")),
     price: z.number().int("Price must be a whole number").positive("Price must be greater than 0"),
     salePrice: z.number().int("Sale price must be a whole number").positive().optional(),
@@ -57,7 +57,7 @@ export const updateProductSchema = z
       .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Use lowercase letters, numbers, and hyphens only")
       .optional(),
     shortDescription: z.string().trim().max(200).optional().or(z.literal("")),
-    description: z.string().trim().max(5000).optional().or(z.literal("")),
+    description: z.string().trim().optional().or(z.literal("")),
     sku: z.string().trim().max(50).optional().or(z.literal("")),
     price: z.number().int().positive().optional(),
     salePrice: z.number().int().positive().nullable().optional(),

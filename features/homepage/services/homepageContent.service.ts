@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import type { HomepageContent } from "@prisma/client";
 
 import { destroyCloudinaryAsset } from "@/lib/cloudinary";
@@ -73,14 +74,18 @@ const DEFAULT_HOMEPAGE_CONTENT: HomepageContent = {
  * updateHomepageContent below, the only place this row is created) and when
  * the database is temporarily unreachable (e.g. P1001 during a build), so
  * no page render or static build can ever crash on this call.
+ *
+ * Wrapped in `React.cache()` so pages that call this directly (e.g. the
+ * homepage) alongside the root layout's own call within the same request
+ * share one query instead of issuing it twice.
  */
-export async function getHomepageContent(): Promise<HomepageContent> {
+export const getHomepageContent = cache(async (): Promise<HomepageContent> => {
   return safeRead(
     async () => (await prisma.homepageContent.findUnique({ where: { id: SINGLETON_ID } })) ?? DEFAULT_HOMEPAGE_CONTENT,
     DEFAULT_HOMEPAGE_CONTENT,
     "getHomepageContent"
   );
-}
+});
 
 const IMAGE_PUBLIC_ID_FIELDS = [
   "heroImagePublicId",

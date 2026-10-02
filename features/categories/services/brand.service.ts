@@ -5,8 +5,16 @@ import { cache } from "react";
 import { prisma, safeRead } from "@/lib/prisma";
 import type { BrandInput, UpdateBrandInput } from "@/features/categories/validation/brand.schema";
 
-/** Called from the build-time sitemap generator (app/sitemap.ts), so a temporarily unreachable database must degrade to an empty list instead of crashing the build — see `safeRead`. */
-export function getBrands(options: { includeInactive?: boolean } = {}) {
+/**
+ * Called from the build-time sitemap generator (app/sitemap.ts), so a
+ * temporarily unreachable database must degrade to an empty list instead of
+ * crashing the build — see `safeRead`.
+ *
+ * Wrapped in `React.cache()` so pages that call this directly (e.g.
+ * `/products`, `/brands`) alongside other callers within the same request
+ * share one query instead of issuing it twice.
+ */
+export const getBrands = cache((options: { includeInactive?: boolean } = {}) => {
   return safeRead(
     () =>
       prisma.brand.findMany({
@@ -17,7 +25,7 @@ export function getBrands(options: { includeInactive?: boolean } = {}) {
     [],
     "getBrands"
   );
-}
+});
 
 /**
  * Wrapped in `React.cache()` so the brand detail page's `generateMetadata`

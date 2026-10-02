@@ -63,10 +63,18 @@ export function HeroBanner({ image, mobileImage, href, alt = "MoonKart Hero Bann
               />
             </div>
             <div className="relative hidden aspect-[1080/1350] w-full overflow-hidden rounded-[22px] sm:block lg:hidden">
+              {/* Tablet is the narrowest of the three breakpoint variants rendered
+                  here, and only one is ever visible at once (the others are
+                  `hidden` via CSS, not unmounted) — `priority` on all three would
+                  have the browser preload every variant's full image regardless
+                  of which is actually shown. `loading="eager"` keeps this
+                  variant's own load timing identical to `priority` (no lazy-load
+                  delay for this always-above-the-fold banner) without adding it
+                  to that redundant preload set. */}
               <Image
                 src={mobileImage!}
                 alt={alt}
-                priority
+                loading="eager"
                 fill
                 sizes="100vw"
                 className="object-cover transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.01]"
