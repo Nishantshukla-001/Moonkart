@@ -7,6 +7,7 @@ import {
   createNotification,
   createReviewRemindersForOrder,
 } from "@/features/notifications/services/notification.service";
+import { calculateShippingCharge } from "@/features/orders/utils";
 import { prisma } from "@/lib/prisma";
 import { sendAdminNewOrderEmail, sendOrderConfirmationEmail, sendOrderStatusEmail } from "@/lib/email/sendOrderEmails";
 import type { AdminOrderQuery, OrderStatusValue } from "@/features/orders/validation/order.schema";
@@ -51,6 +52,40 @@ function resolveUnitPrice(
 function variantLabel(variant: { size: string | null; color: string | null } | null) {
   if (!variant) return null;
   return [variant.size, variant.color].filter(Boolean).join(" / ") || null;
+}
+
+export type CalculateCartSubtotalResult =
+  | { success: true; subtotal: number }
+  | { success: false; error: string };
+
+/**
+ * Read-only mirror of the subtotal loop inside `placeOrder`/
+ * `placeOrderFromRazorpayPayment` — re-derives each line's price fresh from
+ * the product/variant (never the cart item's stale cached price), but does
+ * NOT touch stock. Used by the Razorpay create-order route to compute the
+ * authoritative pre-payment amount; the real stock-checked, race-safe
+ * decrement still only happens inside the order-placement transactions
+ * below, exactly as before.
+ */
+export async function calculateCartSubtotal(userId: string): Promise<CalculateCartSubtotalResult> {
+  const cart = await prisma.cart.findUnique({
+    where: { userId },
+    include: { items: { include: { product: true, variant: true } } },
+  });
+
+  if (!cart || cart.items.length === 0) {
+    return { success: false, error: "Your cart is empty." };
+  }
+
+  let subtotal = 0;
+  for (const line of cart.items) {
+    if (!line.product.isPublished) {
+      return { success: false, error: `"${line.product.name}" is no longer available.` };
+    }
+    subtotal += resolveUnitPrice(line.product, line.variant) * line.quantity;
+  }
+
+  return { success: true, subtotal };
 }
 
 export type PlaceOrderResult =
@@ -178,11 +213,12 @@ export async function placeOrder(userId: string, addressId: string): Promise<Pla
         });
       }
 
-      // No coupon/tax/shipping-rate system yet (out of scope this phase) —
-      // these are computed as 0 but kept as real stored/returned fields so
-      // the checkout UI and Order model are ready for them later.
+      // No coupon/tax system yet (out of scope this phase) — kept at 0 but
+      // as real stored/returned fields so the checkout UI and Order model
+      // are ready for them later. Shipping is the client's confirmed fixed
+      // Delhi/NCR vs. rest-of-India rate — see calculateShippingCharge.
       const discount = 0;
-      const shippingCharge = 0;
+      const shippingCharge = calculateShippingCharge(address.city);
       const tax = 0;
       const totalAmount = subtotal - discount + shippingCharge + tax;
 
@@ -405,8 +441,10 @@ export async function placeOrderFromRazorpayPayment({
         });
       }
 
+      // Same fixed Delhi/NCR vs. rest-of-India rate as the COD path above —
+      // see calculateShippingCharge. Discount/tax remain 0 (out of scope).
       const discount = 0;
-      const shippingCharge = 0;
+      const shippingCharge = calculateShippingCharge(address.city);
       const tax = 0;
       const totalAmount = subtotal - discount + shippingCharge + tax;
 

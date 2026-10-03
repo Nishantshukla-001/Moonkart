@@ -17,6 +17,7 @@ import { AddressCard } from "@/features/addresses/components/AddressCard";
 import { AddressFormDialog } from "@/features/addresses/components/AddressFormDialog";
 import { ROUTES } from "@/constants/routes";
 import { useCart } from "@/hooks/useCart";
+import { calculateShippingCharge } from "@/features/orders/utils";
 import { formatCurrency } from "@/utils/formatCurrency";
 import type { IAddress } from "@/types/address";
 import type { RazorpayCheckoutOptions, RazorpayPaymentSuccessResponse } from "@/types/razorpay";
@@ -48,7 +49,12 @@ export function CheckoutClient({
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [finalizationError, setFinalizationError] = useState<string | null>(null);
 
-  const shippingCharge = 0;
+  // Display-only estimate so the total updates instantly as the shopper
+  // switches addresses — the server independently (re)computes this same
+  // value from the selected address when the Razorpay order is created, and
+  // that server value is what's actually charged (see handlePlaceOrder).
+  const selectedAddress = addresses.find((address) => address.id === selectedAddressId);
+  const shippingCharge = selectedAddress ? calculateShippingCharge(selectedAddress.city) : 0;
   const discount = 0;
   const tax = 0;
   const grandTotal = subtotal - discount + shippingCharge + tax;
@@ -144,8 +150,7 @@ export function CheckoutClient({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          amount: Math.round(grandTotal * 100),
-          currency: "INR",
+          addressId: selectedAddressId,
           receipt: `receipt_${Date.now()}`,
         }),
       });

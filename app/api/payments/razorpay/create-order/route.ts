@@ -1,21 +1,27 @@
 import type { NextRequest } from "next/server";
 import { z } from "zod";
 
+import { calculateCartSubtotal } from "@/features/orders/services/order.service";
+import { calculateShippingCharge } from "@/features/orders/utils";
 import { apiError, apiSuccess } from "@/lib/apiResponse";
 import { getCurrentUser } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { createRazorpayOrder, RAZORPAY_CURRENCY } from "@/lib/razorpay";
 import { getClientIp, rateLimit } from "@/lib/rateLimit";
 
 const createOrderSchema = z.object({
-  amount: z
-    .number("Amount is required.")
-    .int("Amount must be an integer number of paise.")
-    .positive("Amount must be greater than zero."),
-  currency: z.literal(RAZORPAY_CURRENCY).default(RAZORPAY_CURRENCY),
+  addressId: z.uuid("Select a shipping address."),
   receipt: z.string().trim().min(1, "Receipt is required.").max(100, "Receipt must be 100 characters or fewer."),
 });
 
-/** Creates a Razorpay Order (Test Mode) for the authenticated user. Does not touch our own Order records — that wiring happens once checkout is integrated. */
+/**
+ * Creates a Razorpay Order (Test Mode) for the authenticated user.
+ *
+ * The amount is computed entirely server-side from the user's live cart and
+ * selected address — never accepted from the client — so the browser can
+ * never under-report the subtotal or strip out the shipping charge before
+ * payment. (discount/tax remain 0 — out of scope, same as order placement.)
+ */
 export async function POST(request: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return apiError("Not authenticated.", [], 401);
@@ -42,10 +48,28 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const address = await prisma.address.findFirst({
+    where: { id: parsed.data.addressId, userId: user.id },
+  });
+  if (!address) return apiError("Selected address not found.", [], 404);
+
+  const subtotalResult = await calculateCartSubtotal(user.id);
+  if (!subtotalResult.success) return apiError(subtotalResult.error, [], 409);
+
+  const discount = 0;
+  const shippingCharge = calculateShippingCharge(address.city);
+  const tax = 0;
+  const totalAmount = subtotalResult.subtotal - discount + shippingCharge + tax;
+  const amountInPaise = Math.round(totalAmount * 100);
+
+  if (amountInPaise <= 0) {
+    return apiError("Order amount must be greater than zero.", [], 422);
+  }
+
   try {
     const order = await createRazorpayOrder({
-      amount: parsed.data.amount,
-      currency: parsed.data.currency,
+      amount: amountInPaise,
+      currency: RAZORPAY_CURRENCY,
       receipt: parsed.data.receipt,
       notes: { userId: user.id },
     });
