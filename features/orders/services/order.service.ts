@@ -216,9 +216,9 @@ export async function placeOrder(userId: string, addressId: string): Promise<Pla
       // No coupon/tax system yet (out of scope this phase) — kept at 0 but
       // as real stored/returned fields so the checkout UI and Order model
       // are ready for them later. Shipping is the client's confirmed fixed
-      // Delhi/NCR vs. rest-of-India rate — see calculateShippingCharge.
+      // Delhi vs. rest-of-India rate — see calculateShippingCharge.
       const discount = 0;
-      const shippingCharge = calculateShippingCharge(address.city);
+      const shippingCharge = calculateShippingCharge(address.city, address.state);
       const tax = 0;
       const totalAmount = subtotal - discount + shippingCharge + tax;
 
@@ -441,10 +441,10 @@ export async function placeOrderFromRazorpayPayment({
         });
       }
 
-      // Same fixed Delhi/NCR vs. rest-of-India rate as the COD path above —
+      // Same fixed Delhi vs. rest-of-India rate as the COD path above —
       // see calculateShippingCharge. Discount/tax remain 0 (out of scope).
       const discount = 0;
-      const shippingCharge = calculateShippingCharge(address.city);
+      const shippingCharge = calculateShippingCharge(address.city, address.state);
       const tax = 0;
       const totalAmount = subtotal - discount + shippingCharge + tax;
 

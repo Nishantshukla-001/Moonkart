@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
   if (!subtotalResult.success) return apiError(subtotalResult.error, [], 409);
 
   const discount = 0;
-  const shippingCharge = calculateShippingCharge(address.city);
+  const shippingCharge = calculateShippingCharge(address.city, address.state);
   const tax = 0;
   const totalAmount = subtotalResult.subtotal - discount + shippingCharge + tax;
   const amountInPaise = Math.round(totalAmount * 100);

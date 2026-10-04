@@ -54,7 +54,9 @@ export function CheckoutClient({
   // value from the selected address when the Razorpay order is created, and
   // that server value is what's actually charged (see handlePlaceOrder).
   const selectedAddress = addresses.find((address) => address.id === selectedAddressId);
-  const shippingCharge = selectedAddress ? calculateShippingCharge(selectedAddress.city) : 0;
+  const shippingCharge = selectedAddress
+    ? calculateShippingCharge(selectedAddress.city, selectedAddress.state)
+    : 0;
   const discount = 0;
   const tax = 0;
   const grandTotal = subtotal - discount + shippingCharge + tax;
