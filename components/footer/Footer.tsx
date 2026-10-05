@@ -43,12 +43,24 @@ export function Footer({ storeSettings, homepageContent }: FooterProps) {
     homepageContent.copyrightText || `© ${new Date().getFullYear()} ${siteConfig.name}. All rights reserved.`;
 
   const contactRows = [
-    { icon: Mail, label: contactInfo.supportEmail, href: `mailto:${contactInfo.supportEmail}` },
-    { icon: Phone, label: contactInfo.phone, href: `tel:${contactInfo.phone}` },
+    { icon: Mail, label: contactInfo.supportEmail, href: `mailto:${contactInfo.supportEmail}`, external: false },
+    { icon: Phone, label: contactInfo.phone, href: `tel:${contactInfo.phone}`, external: false },
     ...(whatsappNumber
-      ? [{ icon: MessageCircle, label: `WhatsApp: ${whatsappNumber}`, href: `https://wa.me/${whatsappNumber}` }]
+      ? [
+          {
+            icon: MessageCircle,
+            label: `WhatsApp: ${whatsappNumber}`,
+            href: `https://wa.me/${whatsappNumber}`,
+            external: false,
+          },
+        ]
       : []),
-    { icon: MapPin, label: businessAddress.full, href: undefined },
+    {
+      icon: MapPin,
+      label: businessAddress.full,
+      href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(businessAddress.full)}`,
+      external: true,
+    },
   ];
 
   return (
@@ -116,6 +128,7 @@ export function Footer({ storeSettings, homepageContent }: FooterProps) {
                 <a
                   key={row.label}
                   href={row.href}
+                  {...(row.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                   className="group flex min-w-0 items-start gap-3 rounded-lg text-sm text-text-secondary transition-colors duration-[250ms] hover:text-blush-hover"
                 >
                   {content}
