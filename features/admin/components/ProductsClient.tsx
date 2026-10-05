@@ -25,6 +25,7 @@ import { Pagination } from "@/components/shared/Pagination";
 import { ROUTES } from "@/constants/routes";
 import { adminProductService } from "@/features/admin/services/adminProduct.service";
 import type { AdminProductQuery } from "@/features/admin/validation/adminProductQuery.schema";
+import { cloudinaryThumbnail } from "@/utils/cloudinaryThumbnail";
 import { debounce } from "@/utils/debounce";
 import { formatCurrency } from "@/utils/formatCurrency";
 import type { IAdminProductListResult } from "@/types/admin";
@@ -226,7 +227,11 @@ export function ProductsClient({ result, categories, brands, query }: ProductsCl
                       className="flex items-center gap-3 font-medium text-text-primary hover:text-blush-hover"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element -- admin-entered arbitrary URL */}
-                      <img src={product.thumbnail} alt="" className="size-10 shrink-0 rounded-lg object-cover" />
+                      <img
+                        src={cloudinaryThumbnail(product.thumbnail, 80)}
+                        alt=""
+                        className="size-10 shrink-0 rounded-lg object-cover"
+                      />
                       <span className="line-clamp-2 max-w-56">{product.name}</span>
                     </Link>
                   </TableCell>

@@ -2,6 +2,7 @@ import "server-only";
 
 import type { Prisma } from "@prisma/client";
 import { cache } from "react";
+import { after } from "next/server";
 
 import { notifyWishlistersOfRestock } from "@/features/notifications/services/notification.service";
 import { destroyCloudinaryAsset } from "@/lib/cloudinary";
@@ -346,13 +347,18 @@ export async function updateProduct(id: string, data: UpdateProductInput) {
     include: publicProductInclude,
   });
 
+  // Both of these are best-effort side-effects that don't affect what the
+  // caller needs back (the already-updated `updated` row) — deferred via
+  // `after()`, the same pattern already used for order-confirmation emails
+  // in order.service.ts, so the admin's save request doesn't wait on a
+  // Cloudinary cleanup call or a notification fan-out it doesn't need to see.
   if (previous?.thumbnailPublicId && previous.thumbnailPublicId !== data.thumbnailPublicId) {
-    await destroyCloudinaryAsset(previous.thumbnailPublicId);
+    const outgoingPublicId = previous.thumbnailPublicId;
+    after(() => destroyCloudinaryAsset(outgoingPublicId));
   }
 
-  // Best-effort — never fail the product update over a notification hiccup.
   if (previous && previous.stock <= 0 && updated.stock > 0) {
-    await notifyWishlistersOfRestock(updated.id, updated.name, updated.slug).catch(() => null);
+    after(() => notifyWishlistersOfRestock(updated.id, updated.name, updated.slug).catch(() => null));
   }
 
   return updated;

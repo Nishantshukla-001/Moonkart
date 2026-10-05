@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { adminProductService } from "@/features/admin/services/adminProduct.service";
 import { ImageFormDialog } from "@/features/admin/components/ImageFormDialog";
 import { ReplaceImageDialog } from "@/features/admin/components/ReplaceImageDialog";
+import { cloudinaryThumbnail } from "@/utils/cloudinaryThumbnail";
 import type { IProductImage } from "@/types/product";
 
 function sortByDisplayOrder(images: IProductImage[]) {
@@ -101,7 +102,11 @@ export function ImagesManager({
             <div key={image.id} className="flex flex-col gap-2 rounded-lg border border-border-light p-2">
               <div className="relative overflow-hidden rounded-md bg-bg-section">
                 {/* eslint-disable-next-line @next/next/no-img-element -- admin-entered arbitrary URL */}
-                <img src={image.imageUrl} alt="" className="aspect-square w-full object-cover" />
+                <img
+                  src={cloudinaryThumbnail(image.imageUrl, 400)}
+                  alt=""
+                  className="aspect-square w-full object-cover"
+                />
                 {index === 0 && (
                   <span className="absolute top-1.5 left-1.5 rounded-full bg-blush px-2 py-0.5 text-[10px] font-semibold text-text-primary">
                     Primary

@@ -130,7 +130,15 @@ export function ProductForm({ product, categories, brands }: ProductFormProps) {
         return;
       }
       toast.success("Product updated.");
-      router.refresh();
+      // Only the page header's title (`Edit ${product.name}`, rendered by the
+      // parent Server Component) can go stale from this save — every other
+      // field the form shows is already the value the admin just submitted.
+      // Skipping the refresh for the common case (editing price/stock/
+      // description/flags/etc.) avoids re-fetching the product, categories,
+      // and brands from the database on every single "Save Changes" click.
+      if (result.data.name !== product?.name) {
+        router.refresh();
+      }
       return;
     }
 
