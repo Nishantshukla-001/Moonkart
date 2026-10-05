@@ -149,7 +149,18 @@ export function Carousel({
             // no longer fights an intended vertical page scroll. Snapping
             // during genuine horizontal swipes/arrow-button/pagination-dot
             // navigation is unaffected.
-            className="flex snap-x snap-proximity gap-4 overflow-x-auto overscroll-x-contain touch-pan-x scroll-smooth pb-1 outline-none select-none contain-[layout_paint] sm:gap-5 [-ms-overflow-style:none] [scrollbar-width:none] focus-visible:ring-3 focus-visible:ring-ring/50 [&::-webkit-scrollbar]:hidden"
+            //
+            // `touch-pan-x touch-pan-y` (not `touch-pan-x` alone): the
+            // single-axis value told the browser this element only ever
+            // handles horizontal panning natively, which on real mobile
+            // browsers doesn't reliably fall through to vertical page
+            // scroll for a touch that starts on this element (e.g. on a
+            // product card) — the swipe could get stuck instead of
+            // scrolling the page. Allowing both axes here lets the
+            // browser's own native gesture detection pick per-swipe
+            // whether to pan the carousel or the page, based on the
+            // touch's actual direction — no JS gesture handling needed.
+            className="flex snap-x snap-proximity gap-4 overflow-x-auto overscroll-x-contain touch-pan-x touch-pan-y scroll-smooth pb-1 outline-none select-none contain-[layout_paint] sm:gap-5 [-ms-overflow-style:none] [scrollbar-width:none] focus-visible:ring-3 focus-visible:ring-ring/50 [&::-webkit-scrollbar]:hidden"
           >
             {Array.isArray(children)
               ? children.map((child, index) => (
