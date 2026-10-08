@@ -1,7 +1,8 @@
 import "server-only";
 
+import { businessAddress } from "@/constants/config";
 import { formatCurrency } from "@/utils/formatCurrency";
-import { BORDER, TEXT_MUTED, TEXT_PRIMARY } from "@/lib/email/emailLayout";
+import { BORDER, BRAND_PINK, TEXT_MUTED, TEXT_PRIMARY } from "@/lib/email/emailLayout";
 import type { OrderForEmail } from "@/lib/email/types";
 
 const PAYMENT_METHOD_LABELS: Record<OrderForEmail["paymentMethod"], string> = {
@@ -83,6 +84,27 @@ export function renderAddressBlock(order: OrderForEmail): string {
     ${order.shippingCountry}<br />
     Phone: ${order.shippingPhone}
   </p>`;
+}
+
+/**
+ * MoonKart's own business address — static (reused from the same
+ * `businessAddress` source as the site footer, not order-dependent like
+ * the customer's shipping address above). Boxed in the brand pink already
+ * used elsewhere in this template so it reads as clearly distinct from the
+ * customer's shipping address: if a delivery attempt fails, this is where
+ * the parcel should be returned.
+ */
+export function renderReturnAddressBlock(): string {
+  return `<div style="margin-top:4px;padding:12px 14px;background-color:${BRAND_PINK};border-radius:8px;">
+    <p style="margin:0;font-size:13px;line-height:170%;color:${TEXT_PRIMARY};">
+      <strong>MoonKart</strong><br />
+      ${businessAddress.line1}<br />
+      ${businessAddress.line2}<br />
+      ${businessAddress.postOffice}, ${businessAddress.district}<br />
+      ${businessAddress.city} – ${businessAddress.postalCode}<br />
+      ${businessAddress.country}
+    </p>
+  </div>`;
 }
 
 export function sectionHeading(label: string): string {

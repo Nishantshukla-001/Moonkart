@@ -6,6 +6,7 @@ import {
   paymentStatusLabel,
   renderAddressBlock,
   renderItemsTable,
+  renderReturnAddressBlock,
   sectionHeading,
 } from "@/lib/email/emailComponents";
 import { renderButton, renderEmailLayout, TEXT_MUTED, TEXT_PRIMARY } from "@/lib/email/emailLayout";
@@ -58,6 +59,9 @@ export function buildAdminOrderEmail(order: OrderForEmail): { subject: string; h
 
     ${sectionHeading("Shipping Address")}
     ${renderAddressBlock(order)}
+
+    ${sectionHeading("Return / Sender Address")}
+    ${renderReturnAddressBlock()}
 
     ${renderButton("View in Admin Panel", `${siteConfig.url}/admin/orders/${order.id}`)}
   `;
