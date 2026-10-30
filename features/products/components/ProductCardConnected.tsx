@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { ProductCard } from "@/components/products/ProductCard";
@@ -12,8 +13,11 @@ export function ProductCardConnected({ product }: { product: IProductWithRelatio
   const addItem = useCart((state) => state.addItem);
   const isWishlisted = useWishlist((state) => state.isWishlisted(product.id));
   const toggleWishlist = useWishlist((state) => state.toggle);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   async function handleAddToCart() {
+    if (isAddingToCart) return;
+
     const variant = getDefaultVariant(product);
 
     if (product.stock <= 0 && !variant) {
@@ -21,6 +25,7 @@ export function ProductCardConnected({ product }: { product: IProductWithRelatio
       return;
     }
 
+    setIsAddingToCart(true);
     const result = await addItem({
       productId: product.id,
       variantId: variant?.id,
@@ -30,6 +35,7 @@ export function ProductCardConnected({ product }: { product: IProductWithRelatio
       price: variant ? (variant.salePrice ?? variant.price ?? getEffectivePrice(product)) : getEffectivePrice(product),
       stock: variant?.stock ?? product.stock,
     });
+    setIsAddingToCart(false);
 
     if (result.success) {
       toast.success(`${product.name} added to cart`);
@@ -53,6 +59,7 @@ export function ProductCardConnected({ product }: { product: IProductWithRelatio
       isWishlisted={isWishlisted}
       onToggleWishlist={handleToggleWishlist}
       onAddToCart={handleAddToCart}
+      isAddingToCart={isAddingToCart}
     />
   );
 }

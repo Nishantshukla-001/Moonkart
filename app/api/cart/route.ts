@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
   }
 
   const result = await addCartItem(user.id, parsed.data);
-  if (!result.success) return apiError(result.error, [], 404);
+  if (!result.success) return apiError(result.error, [], result.status);
 
   return apiSuccess(
     { ...result.cart, ...calculateCartTotals(result.cart) },

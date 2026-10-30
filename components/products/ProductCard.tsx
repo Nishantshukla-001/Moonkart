@@ -1,4 +1,4 @@
-import { ShoppingBag, Star } from "lucide-react";
+import { Loader2, ShoppingBag, Star } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ interface ProductCardProps {
   isWishlisted?: boolean;
   onToggleWishlist?: () => void;
   onAddToCart?: () => void;
+  isAddingToCart?: boolean;
   className?: string;
 }
 
@@ -37,6 +38,7 @@ export function ProductCard({
   isWishlisted,
   onToggleWishlist,
   onAddToCart,
+  isAddingToCart,
   className,
 }: ProductCardProps) {
   const discountPercent = oldPrice ? calculateDiscountPercent(oldPrice, price) : 0;
@@ -112,10 +114,15 @@ export function ProductCard({
           size="sm"
           className="group/btn mt-2 w-full hover:-translate-y-0.5"
           onClick={onAddToCart}
+          disabled={isAddingToCart}
           aria-label={`Add ${name} to cart`}
         >
-          <ShoppingBag className="transition-transform duration-[250ms] group-hover/btn:-translate-y-0.5 group-hover/btn:scale-110" />
-          Add to Cart
+          {isAddingToCart ? (
+            <Loader2 className="animate-spin" />
+          ) : (
+            <ShoppingBag className="transition-transform duration-[250ms] group-hover/btn:-translate-y-0.5 group-hover/btn:scale-110" />
+          )}
+          {isAddingToCart ? "Adding…" : "Add to Cart"}
         </Button>
       </div>
     </Card>

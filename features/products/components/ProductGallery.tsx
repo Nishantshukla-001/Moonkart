@@ -47,7 +47,14 @@ export function ProductGallery({ images, name }: { images: string[]; name: strin
         role="region"
         aria-label={`${name} image gallery`}
         onScroll={measureActiveIndex}
-        className="relative flex aspect-square snap-x snap-mandatory gap-0 overflow-x-auto overscroll-x-contain touch-pan-x rounded-image bg-bg-dashboard shadow-soft [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        // `snap-proximity` (not `snap-mandatory`) and `touch-pan-x touch-pan-y`
+        // (not `touch-pan-x` alone) — same fix as components/shared/Carousel.tsx,
+        // for the same reason: `mandatory` snap fights a vertical page-scroll
+        // gesture that has any incidental horizontal delta, and a single-axis
+        // `touch-action` stops the browser from natively passing a vertical
+        // swipe through to the page when it starts on this gallery/a product
+        // image. Horizontal swipe-between-images behavior is unaffected.
+        className="relative flex aspect-square snap-x snap-proximity gap-0 overflow-x-auto overscroll-x-contain touch-pan-x touch-pan-y rounded-image bg-bg-dashboard shadow-soft [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {gallery.map((image, index) => (
           <div

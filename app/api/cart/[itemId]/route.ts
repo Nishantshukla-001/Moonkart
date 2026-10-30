@@ -22,10 +22,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     );
   }
 
-  const cart = await updateCartItemQuantity(user.id, itemId, parsed.data.quantity);
-  if (!cart) return apiError("Cart item not found.", [], 404);
+  const result = await updateCartItemQuantity(user.id, itemId, parsed.data.quantity);
+  if (!result.success) return apiError(result.error, [], result.status);
 
-  return apiSuccess({ ...cart, ...calculateCartTotals(cart) }, "Quantity updated.");
+  return apiSuccess({ ...result.cart, ...calculateCartTotals(result.cart) }, "Quantity updated.");
 }
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ itemId: string }> }) {

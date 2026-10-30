@@ -31,7 +31,8 @@ export const defaultMetadata: Metadata = {
     title: siteConfig.name,
     description: siteConfig.description,
   },
-  icons: {
-    icon: "/icon.jpg",
-  },
+  // No explicit `icons` override — app/favicon.ico, app/icon.png, and
+  // app/apple-icon.png are all picked up automatically by Next.js's file
+  // convention, so adding one here would just duplicate what those files
+  // already generate.
 };

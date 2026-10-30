@@ -28,59 +28,105 @@ export async function getOrCreateCart(userId: string) {
   });
 }
 
-async function resolveUnitPrice(productId: string, variantId: string | null | undefined) {
+/**
+ * Resolves the authoritative price/stock/availability for a product or
+ * variant directly from the database — the server is the sole source of
+ * truth here, never the client. `kind` distinguishes *why* a line can't be
+ * priced, so callers can return the right HTTP status and message instead
+ * of a generic failure.
+ */
+async function resolveUnitPrice(
+  productId: string,
+  variantId: string | null | undefined
+): Promise<
+  | { kind: "not_found" }
+  | { kind: "unavailable" }
+  | { kind: "ok"; unitPrice: number; stock: number }
+> {
   if (variantId) {
-    const variant = await prisma.productVariant.findUnique({ where: { id: variantId } });
-    if (!variant || variant.productId !== productId) return null;
-    return { unitPrice: variant.salePrice ?? variant.price ?? 0, stock: variant.stock };
+    const variant = await prisma.productVariant.findUnique({
+      where: { id: variantId },
+      include: { product: { select: { isPublished: true } } },
+    });
+    if (!variant || variant.productId !== productId) return { kind: "not_found" };
+    if (!variant.product.isPublished) return { kind: "unavailable" };
+    return { kind: "ok", unitPrice: variant.salePrice ?? variant.price ?? 0, stock: variant.stock };
   }
 
   const product = await prisma.product.findUnique({ where: { id: productId } });
-  if (!product) return null;
-  return { unitPrice: product.salePrice ?? product.price, stock: product.stock };
+  if (!product) return { kind: "not_found" };
+  if (!product.isPublished) return { kind: "unavailable" };
+  return { kind: "ok", unitPrice: product.salePrice ?? product.price, stock: product.stock };
 }
+
+/** Shared wording for every "can't fit this quantity" case, below. */
+function stockErrorMessage(stock: number, alreadyInCart: number): string {
+  if (stock <= 0) return "This product is out of stock.";
+  const remaining = Math.max(stock - alreadyInCart, 0);
+  if (remaining <= 0) {
+    return `You already have the maximum available quantity (${stock}) of this item in your cart.`;
+  }
+  return `Only ${stock} in stock. You can add up to ${remaining} more.`;
+}
+
+export type CartMutationResult =
+  | { success: true; cart: Awaited<ReturnType<typeof getOrCreateCart>> }
+  | { success: false; error: string; status: 404 | 409 };
 
 export async function addCartItem(
   userId: string,
   { productId, variantId, quantity }: { productId: string; variantId?: string; quantity: number }
-): Promise<
-  { success: true; cart: Awaited<ReturnType<typeof getOrCreateCart>> } | { success: false; error: string }
-> {
-  // Independent of each other — resolving the product/variant price and
-  // ensuring the cart row exists don't depend on one another, so run them
-  // concurrently instead of paying two sequential round trips.
-  const [resolved, cart] = await Promise.all([
-    resolveUnitPrice(productId, variantId),
-    prisma.cart.upsert({ where: { userId }, create: { userId }, update: {} }),
-  ]);
-  if (!resolved) return { success: false, error: "Product not found." };
+): Promise<CartMutationResult> {
+  // Stock/availability is read once, outside the transaction — this cart-
+  // level check is intentionally a best-effort guard rail, not a reservation
+  // (see the atomic `stock: { gte }` decrement in order.service.ts for the
+  // real, authoritative enforcement at checkout). What *does* need to be
+  // atomic is the cart mutation itself, below.
+  const resolved = await resolveUnitPrice(productId, variantId);
+  if (resolved.kind === "not_found") return { success: false, error: "Product not found.", status: 404 };
+  if (resolved.kind === "unavailable") {
+    return { success: false, error: "This product is currently unavailable.", status: 409 };
+  }
 
-  // Prisma's compound-unique lookup rejects `null` for one of the key
-  // fields (SQL NULL is never equal to itself, so it can't back a unique
-  // index probe), so the single-upsert shortcut only works when a variant
-  // is present. Products without a variant (the common case) still need
-  // the findFirst + create/update pair.
-  if (variantId) {
-    await prisma.cartItem.upsert({
-      where: { cartId_productId_variantId: { cartId: cart.id, productId, variantId } },
-      create: { cartId: cart.id, productId, variantId, quantity, price: resolved.unitPrice },
-      update: { quantity: { increment: quantity }, price: resolved.unitPrice },
+  const outcome = await prisma.$transaction(async (tx) => {
+    const cart = await tx.cart.upsert({ where: { userId }, create: { userId }, update: {} });
+
+    // Row-level lock on the cart itself — the exact same pattern
+    // placeOrder()/placeOrderFromRazorpayPayment() use in order.service.ts.
+    // A genuine UPDATE (not a plain SELECT) takes a row lock for the rest of
+    // this transaction under Postgres's default READ COMMITTED isolation,
+    // so a second concurrent addCartItem/updateCartItemQuantity call for
+    // this same cart blocks here until this transaction commits or rolls
+    // back — it then sees this write's committed result instead of racing
+    // against a stale read. Other users' carts are untouched and proceed in
+    // full parallel; only concurrent writers to this one cart ever wait.
+    await tx.cart.update({ where: { id: cart.id }, data: { updatedAt: new Date() } });
+
+    const existing = await tx.cartItem.findFirst({
+      where: { cartId: cart.id, productId, variantId: variantId ?? null },
     });
-  } else {
-    const existing = await prisma.cartItem.findFirst({
-      where: { cartId: cart.id, productId, variantId: null },
-    });
+
+    const requestedTotal = (existing?.quantity ?? 0) + quantity;
+    if (requestedTotal > resolved.stock) {
+      return { kind: "stock" as const, error: stockErrorMessage(resolved.stock, existing?.quantity ?? 0) };
+    }
 
     if (existing) {
-      await prisma.cartItem.update({
+      await tx.cartItem.update({
         where: { id: existing.id },
-        data: { quantity: existing.quantity + quantity, price: resolved.unitPrice },
+        data: { quantity: requestedTotal, price: resolved.unitPrice },
       });
     } else {
-      await prisma.cartItem.create({
-        data: { cartId: cart.id, productId, variantId: null, quantity, price: resolved.unitPrice },
+      await tx.cartItem.create({
+        data: { cartId: cart.id, productId, variantId: variantId ?? null, quantity, price: resolved.unitPrice },
       });
     }
+
+    return { kind: "ok" as const };
+  });
+
+  if (outcome.kind === "stock") {
+    return { success: false, error: outcome.error, status: 409 };
   }
 
   return { success: true, cart: await getOrCreateCart(userId) };
@@ -102,12 +148,35 @@ async function findOwnedCartItem(userId: string, itemId: string) {
   }
 }
 
-export async function updateCartItemQuantity(userId: string, itemId: string, quantity: number) {
+export async function updateCartItemQuantity(
+  userId: string,
+  itemId: string,
+  quantity: number
+): Promise<CartMutationResult> {
   const item = await findOwnedCartItem(userId, itemId);
-  if (!item) return null;
+  if (!item) return { success: false, error: "Cart item not found.", status: 404 };
 
-  await prisma.cartItem.update({ where: { id: itemId }, data: { quantity } });
-  return getOrCreateCart(userId);
+  // Re-validate against the live product/variant on every quantity change —
+  // not just at add-to-cart time — so raising the quantity stepper on the
+  // cart page can't exceed stock either.
+  const resolved = await resolveUnitPrice(item.productId, item.variantId ?? undefined);
+  if (resolved.kind === "not_found") return { success: false, error: "Product not found.", status: 404 };
+  if (resolved.kind === "unavailable") {
+    return { success: false, error: "This product is currently unavailable.", status: 409 };
+  }
+  if (quantity > resolved.stock) {
+    return { success: false, error: stockErrorMessage(resolved.stock, 0), status: 409 };
+  }
+
+  await prisma.$transaction(async (tx) => {
+    // Same cart-row lock as addCartItem — without it, a concurrent
+    // addCartItem for this same line (e.g. a second tab) could read its
+    // pre-update quantity and overwrite this write right after it commits.
+    await tx.cart.update({ where: { id: item.cartId }, data: { updatedAt: new Date() } });
+    await tx.cartItem.update({ where: { id: itemId }, data: { quantity, price: resolved.unitPrice } });
+  });
+
+  return { success: true, cart: await getOrCreateCart(userId) };
 }
 
 export async function removeCartItem(userId: string, itemId: string) {

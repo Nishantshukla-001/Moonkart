@@ -153,6 +153,39 @@ export const useCartStore = create<CartState>((set, get) => ({
     const { isAuthenticated } = get();
 
     if (isAuthenticated) {
+      // Optimistic update: show the item in the cart (badge count, drawer,
+      // cart page — all read from this same store) immediately, before the
+      // network round trip resolves, so Add to Cart feels instant. The
+      // server's response below is still what's actually persisted — on
+      // success it fully replaces this guess with the authoritative cart
+      // (real id, price, stock), and on failure the optimistic change is
+      // rolled back to `previousItems`. Nothing here is ever trusted as
+      // the final state; it's purely a perceived-latency improvement.
+      const previousItems = get().items;
+      const existingIndex = previousItems.findIndex(
+        (item) => item.productId === input.productId && item.variantId === input.variantId
+      );
+      const optimisticItems =
+        existingIndex >= 0
+          ? previousItems.map((item, index) =>
+              index === existingIndex ? { ...item, quantity: item.quantity + quantity } : item
+            )
+          : [
+              ...previousItems,
+              {
+                id: `optimistic:${input.productId}:${input.variantId ?? ""}`,
+                productId: input.productId,
+                variantId: input.variantId,
+                name: input.name,
+                slug: input.slug,
+                image: input.image,
+                price: input.price,
+                quantity,
+                stock: input.stock,
+              },
+            ];
+      set({ items: optimisticItems, ...computeTotals(optimisticItems) });
+
       try {
         const response = await fetch("/api/cart", {
           method: "POST",
@@ -160,12 +193,16 @@ export const useCartStore = create<CartState>((set, get) => ({
           body: JSON.stringify({ productId: input.productId, variantId: input.variantId, quantity }),
         });
         const json = await response.json();
-        if (!response.ok) return { success: false, message: json.message ?? "Could not add to cart." };
+        if (!response.ok) {
+          set({ items: previousItems, ...computeTotals(previousItems) });
+          return { success: false, message: json.message ?? "Could not add to cart." };
+        }
 
         const items = (json.data?.items ?? []).map(serverItemToLine);
         set({ items, ...computeTotals(items) });
         return { success: true, message: "Added to cart." };
       } catch {
+        set({ items: previousItems, ...computeTotals(previousItems) });
         return { success: false, message: NETWORK_ERROR_MESSAGE };
       }
     }

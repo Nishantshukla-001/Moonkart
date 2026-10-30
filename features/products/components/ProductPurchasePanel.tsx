@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, Minus, Plus, ShoppingBag } from "lucide-react";
+import { Heart, Loader2, Minus, Plus, ShoppingBag } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -166,8 +166,12 @@ export function ProductPurchasePanel({
           onClick={handleAddToCart}
           disabled={!canAddToCart || isSubmitting}
         >
-          <ShoppingBag />
-          {product.hasVariants && !selectedVariant ? "Select options" : "Add to Cart"}
+          {isSubmitting ? <Loader2 className="animate-spin" /> : <ShoppingBag />}
+          {isSubmitting
+            ? "Adding…"
+            : product.hasVariants && !selectedVariant
+              ? "Select options"
+              : "Add to Cart"}
         </Button>
         <Button
           size="lg"
