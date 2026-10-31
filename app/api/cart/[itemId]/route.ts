@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 
-import { calculateCartTotals, removeCartItem, updateCartItemQuantity } from "@/features/cart/services/cart.service";
+import { removeCartItem, updateCartItemQuantity } from "@/features/cart/services/cart.service";
 import { updateCartItemSchema } from "@/features/cart/validation/cart.schema";
 import { getCurrentUser } from "@/lib/auth";
 import { apiError, apiSuccess } from "@/lib/apiResponse";
@@ -30,7 +30,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   );
   if (!result.success) return apiError(result.error, [], result.status);
 
-  return apiSuccess({ ...result.cart, ...calculateCartTotals(result.cart) }, "Quantity updated.");
+  return apiSuccess({ item: result.item }, "Quantity updated.");
 }
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ itemId: string }> }) {
@@ -38,8 +38,8 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   if (!user) return apiError("Not authenticated.", [], 401);
 
   const { itemId } = await params;
-  const cart = await removeCartItem(user.id, itemId);
-  if (!cart) return apiError("Cart item not found.", [], 404);
+  const result = await removeCartItem(user.id, itemId);
+  if (!result.success) return apiError("Cart item not found.", [], 404);
 
-  return apiSuccess({ ...cart, ...calculateCartTotals(cart) }, "Item removed.");
+  return apiSuccess(null, "Item removed.");
 }

@@ -25,8 +25,14 @@ export function ProductCardConnected({ product }: { product: IProductWithRelatio
       return;
     }
 
+    // addItem's optimistic cart update (badge, drawer, cart page) applies
+    // synchronously before it ever awaits the network — by the time this
+    // call returns a promise, that part is already done. The actual server
+    // round trip (now queued per line, so rapid repeated clicks stay safe
+    // and ordered) is handled below without holding the button or the
+    // success toast hostage to it; a later rejection still corrects both.
     setIsAddingToCart(true);
-    const result = await addItem({
+    const resultPromise = addItem({
       productId: product.id,
       variantId: variant?.id,
       name: product.name,
@@ -36,10 +42,12 @@ export function ProductCardConnected({ product }: { product: IProductWithRelatio
       stock: variant?.stock ?? product.stock,
     });
     setIsAddingToCart(false);
+    toast.success(`${product.name} added to cart`);
 
-    if (result.success) {
-      toast.success(`${product.name} added to cart`);
-    } else {
+    const result = await resultPromise;
+    if (!result.success) {
+      // The store has already rolled back the optimistic change; correct
+      // the premature success toast with what actually happened.
       toast.error(result.message);
     }
   }

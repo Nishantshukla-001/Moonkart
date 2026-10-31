@@ -63,6 +63,31 @@ function serverItemToLine(item: ServerCartItem): CartLine {
   };
 }
 
+/** The lean shape addCartItem/updateCartItemQuantity now return — just
+ * enough to reconcile one line, not the full nested cart/product/variant
+ * payload `serverItemToLine` expects (see cart.service.ts's CartItemUpdate). */
+interface ServerCartItemUpdate {
+  id: string;
+  productId: string;
+  variantId: string | null;
+  quantity: number;
+  price: number;
+}
+
+/** Merges a server-confirmed line into the current items array by matching
+ * on productId+variantId (not `id`, since a brand-new line's optimistic id
+ * is a placeholder, not yet the server's real one) — replacing the
+ * optimistic guess's id/quantity/price while keeping its already-correct
+ * display fields (name, slug, image, stock). */
+function applyServerItemUpdate(items: CartLine[], update: ServerCartItemUpdate): CartLine[] {
+  const variantId = update.variantId ?? undefined;
+  const index = items.findIndex((item) => item.productId === update.productId && item.variantId === variantId);
+  if (index === -1) return items;
+  const next = items.slice();
+  next[index] = { ...next[index], id: update.id, quantity: update.quantity, price: update.price };
+  return next;
+}
+
 interface CartState {
   items: CartLine[];
   isLoading: boolean;
@@ -107,16 +132,20 @@ function isCurrentCartLineRequest(id: string, version: number): boolean {
   return latestCartLineRequest.get(id) === version;
 }
 
-// Serializes updateQuantity/removeItem NETWORK calls (not the optimistic UI
-// update, which stays immediate) per cart item id. Without this, two rapid
-// clicks on the same line fire two concurrent requests, and the server has
-// no way to know which one the shopper intended to happen "first" — it can
-// only reject whichever loses the race for its row lock, even if that one
-// was the first click. Queuing requests per id means the second click's
-// request isn't even sent until the first click's has fully resolved, so
-// each one's compare-and-swap basis is always accurate by the time it's
-// actually sent.
-const cartLineQueue = new Map<string, Promise<void>>();
+// Serializes addItem/updateQuantity/removeItem NETWORK calls (not the
+// optimistic UI update, which stays immediate) per cart line. Without this,
+// two rapid clicks on the same line fire two concurrent requests, and the
+// server has no way to know which one the shopper intended to happen
+// "first" — it can only reject whichever loses the race for its row lock
+// (for updates), or, for addItem specifically, respond out of order and let
+// an older "add" response land after a newer one and silently revert it.
+// Queuing requests per line means the second click's request isn't even
+// sent until the first click's has fully resolved, so each one's basis
+// (compare-and-swap quantity, or the running total for repeated adds) is
+// always accurate by the time it's actually sent — addItem is keyed by
+// `add:${productId}:${variantId}` (it has no cart-item id yet for a
+// brand-new line); updateQuantity/removeItem keep using the real id.
+const cartLineQueue = new Map<string, Promise<unknown>>();
 
 // Marks a cart item id as explicitly removed the moment removeItem's
 // optimistic update runs. A queued updateQuantity task uses this — not "is
@@ -146,7 +175,7 @@ const explicitlyRemovedCartLines = new Set<string>();
 // independently of any real login/logout.
 let cartMutationGeneration = 0;
 
-function enqueueCartLineTask(id: string, task: () => Promise<void>): Promise<void> {
+function enqueueCartLineTask<T>(id: string, task: () => Promise<T>): Promise<T> {
   const previous = cartLineQueue.get(id) ?? Promise.resolve();
   const next = previous.then(task, task);
   cartLineQueue.set(id, next.catch(() => {}));
@@ -294,25 +323,37 @@ export const useCartStore = create<CartState>((set, get) => ({
       set({ items: optimisticItems, ...computeTotals(optimisticItems) });
       cartMutationGeneration++;
 
-      try {
-        const response = await fetch("/api/cart", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ productId: input.productId, variantId: input.variantId, quantity }),
-        });
-        const json = await response.json();
-        if (!response.ok) {
-          set({ items: previousItems, ...computeTotals(previousItems) });
-          return { success: false, message: json.message ?? "Could not add to cart." };
-        }
+      // Same per-line serialization as updateQuantity/removeItem, keyed by
+      // product+variant since a brand-new line has no real cart-item id yet.
+      // Without this, two rapid "Add to Cart" clicks on the same product
+      // fire two concurrent requests whose responses can arrive out of
+      // order — an older response landing after a newer one would silently
+      // revert the quantity, exactly the race the queue prevents elsewhere.
+      // (This also means the button's loading state is no longer the only
+      // thing protecting against duplicate-click corruption — see the three
+      // calling components, which now clear it immediately.)
+      const lineKey = `add:${input.productId}:${input.variantId ?? ""}`;
+      return enqueueCartLineTask(lineKey, async () => {
+        try {
+          const response = await fetch("/api/cart", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ productId: input.productId, variantId: input.variantId, quantity }),
+          });
+          const json = await response.json();
+          if (!response.ok) {
+            set({ items: previousItems, ...computeTotals(previousItems) });
+            return { success: false, message: json.message ?? "Could not add to cart." };
+          }
 
-        const items = (json.data?.items ?? []).map(serverItemToLine);
-        set({ items, ...computeTotals(items) });
-        return { success: true, message: "Added to cart." };
-      } catch {
-        set({ items: previousItems, ...computeTotals(previousItems) });
-        return { success: false, message: NETWORK_ERROR_MESSAGE };
-      }
+          const items = applyServerItemUpdate(get().items, json.data.item);
+          set({ items, ...computeTotals(items) });
+          return { success: true, message: "Added to cart." };
+        } catch {
+          set({ items: previousItems, ...computeTotals(previousItems) });
+          return { success: false, message: NETWORK_ERROR_MESSAGE };
+        }
+      });
     }
 
     const guestItems = readGuestCart();
@@ -399,7 +440,7 @@ export const useCartStore = create<CartState>((set, get) => ({
             // final state.
             return;
           }
-          const items = (json.data?.items ?? []).map(serverItemToLine);
+          const items = applyServerItemUpdate(get().items, json.data.item);
           set({ items, ...computeTotals(items) });
         } catch {
           if (explicitlyRemovedCartLines.has(id)) return;
@@ -461,8 +502,8 @@ export const useCartStore = create<CartState>((set, get) => ({
             void resyncCartLine(id, version, set);
             return;
           }
-          const items = (json.data?.items ?? []).map(serverItemToLine);
-          set({ items, ...computeTotals(items) });
+          // Success carries no cart data — the optimistic removal already
+          // reflects the correct end state; nothing left to merge in.
         } catch {
           explicitlyRemovedCartLines.delete(id);
           set({ items: previousItems, ...computeTotals(previousItems) });

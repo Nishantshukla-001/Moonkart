@@ -35,7 +35,7 @@ export async function getOrCreateCart(userId: string) {
  * priced, so callers can return the right HTTP status and message instead
  * of a generic failure.
  */
-async function resolveUnitPrice(
+export async function resolveUnitPrice(
   productId: string,
   variantId: string | null | undefined
 ): Promise<
@@ -69,20 +69,37 @@ function stockErrorMessage(stock: number, alreadyInCart: number): string {
   return `Only ${stock} in stock. You can add up to ${remaining} more.`;
 }
 
+/** The minimal, authoritative fields a client needs to reconcile one cart
+ * line after a mutation — deliberately not the full nested cart/product/
+ * variant shape `getOrCreateCart` returns, since the client already has
+ * that display data locally (from its own optimistic update) and only
+ * needs the server-confirmed id/quantity/price to merge in. */
+export interface CartItemUpdate {
+  id: string;
+  productId: string;
+  variantId: string | null;
+  quantity: number;
+  price: number;
+}
+
 export type CartMutationResult =
-  | { success: true; cart: Awaited<ReturnType<typeof getOrCreateCart>> }
+  | { success: true; item: CartItemUpdate }
   | { success: false; error: string; status: 404 | 409 };
 
 export async function addCartItem(
   userId: string,
-  { productId, variantId, quantity }: { productId: string; variantId?: string; quantity: number }
+  { productId, variantId, quantity }: { productId: string; variantId?: string; quantity: number },
+  // Callers that have already resolved this independently of auth (see the
+  // POST /api/cart route, which runs this in parallel with getCurrentUser())
+  // can pass it in to avoid resolving it a second time.
+  preResolved?: Awaited<ReturnType<typeof resolveUnitPrice>>
 ): Promise<CartMutationResult> {
   // Stock/availability is read once, outside the transaction — this cart-
   // level check is intentionally a best-effort guard rail, not a reservation
   // (see the atomic `stock: { gte }` decrement in order.service.ts for the
   // real, authoritative enforcement at checkout). What *does* need to be
   // atomic is the cart mutation itself, below.
-  const resolved = await resolveUnitPrice(productId, variantId);
+  const resolved = preResolved ?? (await resolveUnitPrice(productId, variantId));
   if (resolved.kind === "not_found") return { success: false, error: "Product not found.", status: 404 };
   if (resolved.kind === "unavailable") {
     return { success: false, error: "This product is currently unavailable.", status: 409 };
@@ -111,25 +128,29 @@ export async function addCartItem(
       return { kind: "stock" as const, error: stockErrorMessage(resolved.stock, existing?.quantity ?? 0) };
     }
 
-    if (existing) {
-      await tx.cartItem.update({
-        where: { id: existing.id },
-        data: { quantity: requestedTotal, price: resolved.unitPrice },
-      });
-    } else {
-      await tx.cartItem.create({
-        data: { cartId: cart.id, productId, variantId: variantId ?? null, quantity, price: resolved.unitPrice },
-      });
-    }
+    // `create`/`update` already return the written row — no separate
+    // fetch needed to report back what we just wrote.
+    const item = existing
+      ? await tx.cartItem.update({
+          where: { id: existing.id },
+          data: { quantity: requestedTotal, price: resolved.unitPrice },
+        })
+      : await tx.cartItem.create({
+          data: { cartId: cart.id, productId, variantId: variantId ?? null, quantity, price: resolved.unitPrice },
+        });
 
-    return { kind: "ok" as const };
+    return { kind: "ok" as const, item };
   });
 
   if (outcome.kind === "stock") {
     return { success: false, error: outcome.error, status: 409 };
   }
 
-  return { success: true, cart: await getOrCreateCart(userId) };
+  const { item } = outcome;
+  return {
+    success: true,
+    item: { id: item.id, productId: item.productId, variantId: item.variantId, quantity: item.quantity, price: item.price },
+  };
 }
 
 /**
@@ -200,12 +221,20 @@ export async function updateCartItemQuantity(
     };
   }
 
-  return { success: true, cart: await getOrCreateCart(userId) };
+  // The compare-and-swap's `count > 0` already guarantees the row now holds
+  // exactly this id/quantity/price — no need to re-fetch it to confirm.
+  return {
+    success: true,
+    item: { id: itemId, productId: item.productId, variantId: item.variantId, quantity, price: resolved.unitPrice },
+  };
 }
 
-export async function removeCartItem(userId: string, itemId: string) {
+export async function removeCartItem(
+  userId: string,
+  itemId: string
+): Promise<{ success: true } | { success: false; status: 404 }> {
   const item = await findOwnedCartItem(userId, itemId);
-  if (!item) return null;
+  if (!item) return { success: false, status: 404 };
 
   const outcome = await prisma.$transaction(async (tx) => {
     // Same cart-row lock as every other mutation here. Without it, a
@@ -224,9 +253,9 @@ export async function removeCartItem(userId: string, itemId: string) {
     return count > 0 ? ("ok" as const) : ("already_removed" as const);
   });
 
-  if (outcome === "already_removed") return null;
+  if (outcome === "already_removed") return { success: false, status: 404 };
 
-  return getOrCreateCart(userId);
+  return { success: true };
 }
 
 export async function clearCart(userId: string) {

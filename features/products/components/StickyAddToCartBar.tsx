@@ -44,10 +44,15 @@ export function StickyAddToCartBar({ product }: { product: IProductWithRelations
       document.getElementById("product-purchase-panel")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
-    if (stock <= 0) return;
+    if (stock <= 0 || isSubmitting) return;
 
+    // Same pattern as ProductCardConnected/ProductPurchasePanel — addItem's
+    // optimistic update is already applied by the time this returns a
+    // promise, so don't hold the button or the success toast on the
+    // (now per-line-queued) server round trip; a rejection still corrects
+    // both below.
     setIsSubmitting(true);
-    const result = await addItem({
+    const resultPromise = addItem({
       productId: product.id,
       variantId: defaultVariant?.id,
       name: product.name,
@@ -57,9 +62,10 @@ export function StickyAddToCartBar({ product }: { product: IProductWithRelations
       stock,
     });
     setIsSubmitting(false);
+    toast.success(`${product.name} added to cart`);
 
-    if (result.success) toast.success(`${product.name} added to cart`);
-    else toast.error(result.message);
+    const result = await resultPromise;
+    if (!result.success) toast.error(result.message);
   }
 
   if (!isVisible) return null;

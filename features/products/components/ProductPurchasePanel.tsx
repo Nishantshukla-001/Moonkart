@@ -46,10 +46,15 @@ export function ProductPurchasePanel({
   const canAddToCart = product.hasVariants ? Boolean(selectedVariant) && stock > 0 : stock > 0;
 
   async function handleAddToCart() {
-    if (!canAddToCart) return;
-    setIsSubmitting(true);
+    if (!canAddToCart || isSubmitting) return;
 
-    const result = await addItem({
+    // Same pattern as ProductCardConnected: addItem's optimistic update has
+    // already landed by the time this call returns a promise, so the button
+    // and success toast don't need to wait for the (now per-line-queued)
+    // server round trip — only a genuine rejection, handled below, should
+    // still correct them.
+    setIsSubmitting(true);
+    const resultPromise = addItem({
       productId: product.id,
       variantId: selectedVariant?.id,
       name: product.name,
@@ -59,11 +64,11 @@ export function ProductPurchasePanel({
       stock,
       quantity,
     });
-
     setIsSubmitting(false);
-    if (result.success) {
-      toast.success(`${product.name} added to cart`);
-    } else {
+    toast.success(`${product.name} added to cart`);
+
+    const result = await resultPromise;
+    if (!result.success) {
       toast.error(result.message);
     }
   }
