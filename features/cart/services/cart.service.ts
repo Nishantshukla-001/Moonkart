@@ -151,7 +151,8 @@ async function findOwnedCartItem(userId: string, itemId: string) {
 export async function updateCartItemQuantity(
   userId: string,
   itemId: string,
-  quantity: number
+  quantity: number,
+  expectedQuantity: number
 ): Promise<CartMutationResult> {
   const item = await findOwnedCartItem(userId, itemId);
   if (!item) return { success: false, error: "Cart item not found.", status: 404 };
@@ -168,13 +169,36 @@ export async function updateCartItemQuantity(
     return { success: false, error: stockErrorMessage(resolved.stock, 0), status: 409 };
   }
 
-  await prisma.$transaction(async (tx) => {
+  const outcome = await prisma.$transaction(async (tx) => {
     // Same cart-row lock as addCartItem — without it, a concurrent
     // addCartItem for this same line (e.g. a second tab) could read its
     // pre-update quantity and overwrite this write right after it commits.
     await tx.cart.update({ where: { id: item.cartId }, data: { updatedAt: new Date() } });
-    await tx.cartItem.update({ where: { id: itemId }, data: { quantity, price: resolved.unitPrice } });
+
+    // Compare-and-swap: only write if the row still holds the quantity the
+    // client last saw. The lock above only serializes concurrent writers —
+    // it doesn't make a later-committing transaction "lose" to an
+    // earlier-issued one, since this is a blind SET rather than a
+    // read-then-increment. Two overlapping quantity changes for the same
+    // line would otherwise let whichever transaction happens to commit last
+    // silently overwrite the other, even if it was the client's older
+    // request. `updateMany` (not `update`) lets a zero-row match fail
+    // cleanly via `count`, instead of `update` throwing P2025.
+    const { count } = await tx.cartItem.updateMany({
+      where: { id: itemId, cartId: item.cartId, quantity: expectedQuantity },
+      data: { quantity, price: resolved.unitPrice },
+    });
+
+    return count > 0 ? ("ok" as const) : ("stale" as const);
   });
+
+  if (outcome === "stale") {
+    return {
+      success: false,
+      error: "This item's quantity changed. Please refresh and try again.",
+      status: 409,
+    };
+  }
 
   return { success: true, cart: await getOrCreateCart(userId) };
 }
@@ -183,7 +207,25 @@ export async function removeCartItem(userId: string, itemId: string) {
   const item = await findOwnedCartItem(userId, itemId);
   if (!item) return null;
 
-  await prisma.cartItem.delete({ where: { id: itemId } });
+  const outcome = await prisma.$transaction(async (tx) => {
+    // Same cart-row lock as every other mutation here. Without it, a
+    // concurrent updateCartItemQuantity for this same line could still be
+    // mid-transaction when this delete lands, or two overlapping removes
+    // could race each other directly.
+    await tx.cart.update({ where: { id: item.cartId }, data: { updatedAt: new Date() } });
+
+    // `deleteMany` (not `delete`) so "already gone" — removed by a
+    // concurrent request that won the lock first — resolves as a plain
+    // zero-row count instead of `delete` throwing P2025.
+    const { count } = await tx.cartItem.deleteMany({
+      where: { id: itemId, cartId: item.cartId },
+    });
+
+    return count > 0 ? ("ok" as const) : ("already_removed" as const);
+  });
+
+  if (outcome === "already_removed") return null;
+
   return getOrCreateCart(userId);
 }
 

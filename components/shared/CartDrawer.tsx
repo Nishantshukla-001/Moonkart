@@ -20,6 +20,7 @@ export interface CartDrawerItem {
   image: string;
   price: number;
   quantity: number;
+  stock: number;
 }
 
 interface CartDrawerProps {
@@ -98,6 +99,7 @@ export function CartDrawer({
                         size="icon"
                         onClick={() => onIncreaseQuantity?.(item.id)}
                         aria-label="Increase quantity"
+                        disabled={item.quantity >= item.stock}
                       >
                         <Plus />
                       </Button>

@@ -22,7 +22,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     );
   }
 
-  const result = await updateCartItemQuantity(user.id, itemId, parsed.data.quantity);
+  const result = await updateCartItemQuantity(
+    user.id,
+    itemId,
+    parsed.data.quantity,
+    parsed.data.expectedQuantity
+  );
   if (!result.success) return apiError(result.error, [], result.status);
 
   return apiSuccess({ ...result.cart, ...calculateCartTotals(result.cart) }, "Quantity updated.");

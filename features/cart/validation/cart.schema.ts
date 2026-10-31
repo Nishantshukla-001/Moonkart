@@ -10,6 +10,13 @@ export type CartItemInput = z.infer<typeof cartItemInputSchema>;
 
 export const updateCartItemSchema = z.object({
   quantity: z.number().int("Quantity must be a whole number").min(1, "Quantity must be at least 1"),
+  // The quantity the client believes is currently stored, so the server can
+  // compare-and-swap instead of blindly overwriting — see
+  // cart.service.ts's updateCartItemQuantity.
+  expectedQuantity: z
+    .number()
+    .int("Expected quantity must be a whole number")
+    .min(1, "Expected quantity must be at least 1"),
 });
 
 export type UpdateCartItemInput = z.infer<typeof updateCartItemSchema>;

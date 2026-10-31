@@ -17,7 +17,7 @@ const organizationJsonLd = {
   "@type": "Organization",
   name: siteConfig.name,
   url: siteConfig.url,
-  logo: `${siteConfig.url}/icon.jpg`,
+  logo: `${siteConfig.url}/icon.png`,
   description: siteConfig.description,
   email: contactInfo.email,
   telephone: contactInfo.phone,
